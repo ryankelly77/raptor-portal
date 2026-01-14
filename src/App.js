@@ -1,148 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Routes, Route, useParams, Link } from 'react-router-dom';
+import { fetchProjectByToken, fetchProjectsByPMToken, recordSurveyClick, updateTask } from './supabaseClient';
+import Admin from './Admin';
 import './App.css';
 
-// Sample project data - in production this would come from an API/database
-const sampleProject = {
-  id: "RV-2025-0147",
-  locationName: "Landmark One",
-  address: "15727 Anthem Pkwy, San Antonio, TX 78249",
-  employeeCount: 450,
-  configuration: "2× Smart Fridge™ + 1× Smart Cooker™",
-  projectManager: {
-    name: "Ryan Kelly",
-    email: "ryan@raptor-vending.com",
-    phone: "(385) 438-6325"
-  },
-  estimatedCompletion: "February 7, 2025",
-  daysRemaining: 25,
-  overallProgress: 45,
-  phases: [
-    {
-      id: 1,
-      title: "Site Assessment & Planning",
-      status: "completed",
-      startDate: "Jan 6, 2025",
-      endDate: "Jan 10, 2025",
-      description: "Site survey completed. Optimal placement identified in 4th floor break room. Cellular signal strength verified for reliable transaction processing. Space requirements confirmed.",
-      tasks: [
-        { label: "Initial site survey and measurements", completed: true },
-        { label: "Optimal placement location identified", completed: true },
-        { label: "Cellular signal strength verification", completed: true },
-        { label: "Space and traffic flow assessment", completed: true },
-        { label: "Infrastructure specifications delivered to property", completed: true }
-      ]
-    },
-    {
-      id: 2,
-      title: "Employee Preference Survey",
-      status: "completed",
-      startDate: "Jan 10, 2025",
-      endDate: "Jan 17, 2025",
-      description: "Survey distributed to building employees to capture snack and meal preferences. Results compiled and menu customization planned based on employee favorites.",
-      tasks: [
-        { label: "Survey link distributed to property management", completed: true },
-        { label: "Employee participation (target: 30%+ response rate)", completed: true },
-        { label: "Snack preferences compiled", completed: true },
-        { label: "Hot meal preferences compiled", completed: true },
-        { label: "Custom menu recommendations finalized", completed: true }
-      ],
-      surveyResults: {
-        responseRate: "42%",
-        topMeals: ["Butter Chicken", "Buffalo Mac & Cheese", "Chicken Tikka Masala"],
-        topSnacks: ["Fresh Fruit Cups", "RXBARs", "Hummus & Pretzel Packs"],
-        dietaryNotes: "12% vegetarian options requested"
-      }
-    },
-    {
-      id: 3,
-      title: "Electrical Preparation",
-      status: "in-progress",
-      startDate: "Jan 13, 2025",
-      endDate: "Jan 24, 2025",
-      description: "Property is responsible for electrical preparation. Dedicated 15A circuit required for Smart Cooker™ induction system. We've provided specifications—property team is coordinating contractor quotes and installation.",
-      tasks: [
-        { label: "Electrical specifications provided to property", completed: true },
-        { label: "Property obtained contractor quotes", completed: true },
-        { label: "Property selected electrical contractor", completed: true },
-        { label: "Dedicated 15A circuit installation", completed: false },
-        { label: "Electrical inspection passed", completed: false }
-      ],
-      propertyResponsibility: true,
-      contractorInfo: {
-        name: "Select Electric LLC",
-        scheduledDate: "Jan 20-22, 2025",
-        status: "Scheduled"
-      }
-    },
-    {
-      id: 4,
-      title: "System Installation & Integration",
-      status: "pending",
-      startDate: "~Jan 27, 2025",
-      endDate: "~Jan 31, 2025",
-      isApproximate: true,
-      description: "Equipment delivery and installation. Smart Fridge™ units positioned and connected. Smart Cooker™ integrated with dedicated circuit. Payment system activation and cellular connectivity confirmed.",
-      tasks: [
-        { label: "Equipment delivery to site", completed: false },
-        { label: "Smart Fridge™ units positioning", completed: false },
-        { label: "Smart Cooker™ installation & circuit connection", completed: false },
-        { label: "Custom enclosure installation", completed: false },
-        { label: "Payment system activation", completed: false },
-        { label: "Cellular transaction testing", completed: false }
-      ]
-    },
-    {
-      id: 5,
-      title: "Testing, Stocking & Launch",
-      status: "pending",
-      startDate: "~Feb 3, 2025",
-      endDate: "~Feb 7, 2025",
-      isApproximate: true,
-      description: "Full system testing, initial inventory stocking with Southerleigh chef-prepared meals based on survey results, property management dashboard setup, and tenant launch communications.",
-      tasks: [
-        { label: "AI vision system calibration", completed: false },
-        { label: "Payment processing verification", completed: false },
-        { label: "Initial Southerleigh meal inventory (survey-based)", completed: false },
-        { label: "Snack inventory based on employee preferences", completed: false },
-        { label: "Property management dashboard access", completed: false },
-        { label: "Tenant communication materials delivered", completed: false },
-        { label: "Official infrastructure launch", completed: false }
-      ]
-    }
-  ],
-  equipment: [
-    {
-      name: "Smart Fridge™ Unit A",
-      model: "MicroMart SF-200",
-      spec: "60 meal capacity",
-      status: "ready",
-      statusLabel: "Ready for Delivery"
-    },
-    {
-      name: "Smart Fridge™ Unit B",
-      model: "MicroMart SF-200",
-      spec: "60 meal capacity",
-      status: "ready",
-      statusLabel: "Ready for Delivery"
-    },
-    {
-      name: "Smart Cooker™ System",
-      model: "KitchenMate SC-3P",
-      spec: "3-pod induction heating",
-      status: "ready",
-      statusLabel: "Ready for Delivery"
-    },
-    {
-      name: "Custom Wood Enclosure",
-      model: "FixtureLite",
-      spec: "Walnut finish, building-matched",
-      status: "fabricating",
-      statusLabel: "Fabrication in Progress"
-    }
-  ]
-};
+// ============================================
+// HELPERS
+// ============================================
+function formatDisplayDate(dateString) {
+  if (!dateString) return null;
+  const date = new Date(dateString + 'T00:00:00');
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+}
 
-// Icons as components
+// ============================================
+// ICONS
+// ============================================
 const CheckIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" width="16" height="16">
     <polyline points="20 6 9 17 4 12"></polyline>
@@ -179,9 +56,7 @@ const PhoneIcon = () => (
 
 const AlertIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-    <circle cx="12" cy="12" r="10"/>
-    <line x1="12" y1="8" x2="12" y2="12"/>
-    <line x1="12" y1="16" x2="12.01" y2="16"/>
+    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
   </svg>
 );
 
@@ -193,21 +68,42 @@ const ChartIcon = () => (
   </svg>
 );
 
-// Header Component
-function Header({ project }) {
+// Logo component - variant: 'light' for dark bg, 'dark' for light bg
+const Logo = ({ variant = 'light', height = 120 }) => (
+  <img
+    src={variant === 'light' ? '/logo-light.png' : '/logo-dark.png'}
+    alt="Raptor Vending"
+    className="logo-img"
+    style={{ height: `${height}px`, width: 'auto' }}
+  />
+);
+
+// ============================================
+// SHARED COMPONENTS
+// ============================================
+function Header({ project, showLogo = true }) {
   return (
     <header className="widget-header">
-      <div className="header-top">
-        <div className="logo">
-          <span className="logo-text">RAPTOR</span>
-          <span className="logo-subtext">VENDING</span>
+      {showLogo ? (
+        <div className="header-top">
+          <Logo variant="light" height={100} />
+          <div className="project-id">Project #{project.id}</div>
         </div>
-        <div className="project-id">Project #{project.id}</div>
-      </div>
-      
-      <h1 className="location-name">{project.locationName}</h1>
+      ) : (
+        <div className="header-top-compact">
+          <h1 className="location-name">{project.propertyName}</h1>
+          <span className="project-id">Project #{project.id}</span>
+        </div>
+      )}
+
+      {showLogo && <h1 className="location-name">{project.propertyName}</h1>}
       <p className="location-address">{project.address}</p>
-      
+      {project.locationName && (
+        <p className="location-address" style={{ marginTop: '-20px', opacity: 0.9 }}>
+          Location: {project.locationName} {project.locationFloor && `(Floor ${project.locationFloor})`}
+        </p>
+      )}
+
       <div className="header-meta">
         <div className="meta-item">
           <span className="meta-label">Building Size</span>
@@ -217,16 +113,11 @@ function Header({ project }) {
           <span className="meta-label">Configuration</span>
           <span className="meta-value">{project.configuration}</span>
         </div>
-        <div className="meta-item">
-          <span className="meta-label">Project Manager</span>
-          <span className="meta-value">{project.projectManager.name}</span>
-        </div>
       </div>
     </header>
   );
 }
 
-// Overall Progress Component
 function OverallProgress({ progress, estimatedCompletion, daysRemaining }) {
   return (
     <div className="overall-progress">
@@ -238,25 +129,326 @@ function OverallProgress({ progress, estimatedCompletion, daysRemaining }) {
         <div className="progress-bar-fill" style={{ width: `${progress}%` }}></div>
       </div>
       <div className="estimated-completion">
-        Estimated completion: <strong>{estimatedCompletion}</strong> ({daysRemaining} days remaining)
+        Estimated completion: <strong>{estimatedCompletion}</strong>
+        {daysRemaining > 0 && ` (${daysRemaining} days remaining)`}
       </div>
     </div>
   );
 }
 
-// Task Item Component
-function TaskItem({ task }) {
+function TaskItem({ task, globalDocuments }) {
+  // Hide ADMIN-DOC tasks until document is uploaded
+  if (task.label.startsWith('[ADMIN-DOC]') && !task.document_url) {
+    return null;
+  }
+
+  // Hide PM tasks from regular task list (shown in PM Action Items section)
+  if (task.label.startsWith('[PM-TEXT]') || task.label.startsWith('[PM]')) {
+    return null;
+  }
+
+  // Clean up label by removing prefixes
+  let displayLabel = task.label
+    .replace('[PM] ', '')
+    .replace('[PM-DATE] ', '')
+    .replace('[PM-TEXT] ', '')
+    .replace('[ADMIN-DATE] ', '')
+    .replace('[ADMIN-SPEED] ', '')
+    .replace('[ADMIN-ENCLOSURE] ', '')
+    .replace('[ADMIN-EQUIPMENT] ', '')
+    .replace('[ADMIN-DELIVERY] ', '')
+    .replace('[ADMIN-DOC] ', '');
+
+  // Handle equipment task - build dynamic label
+  const isAdminEquipment = task.label.startsWith('[ADMIN-EQUIPMENT]');
+  if (isAdminEquipment && (task.smartfridge_qty || task.smartcooker_qty)) {
+    const parts = [];
+    if (task.smartfridge_qty > 0) {
+      parts.push(`(${task.smartfridge_qty}) SmartFridge™`);
+    }
+    if (task.smartcooker_qty > 0) {
+      parts.push(`(${task.smartcooker_qty}) SmartCooker™`);
+    }
+    if (parts.length > 0) {
+      displayLabel = parts.join(' and ') + ' ordered';
+    }
+  }
+
+  // Handle delivery task - build dynamic label with date, carrier, tracking
+  const isAdminDelivery = task.label.startsWith('[ADMIN-DELIVERY]');
+  const deliveries = task.deliveries || [];
+  const hasDeliveryData = isAdminDelivery && deliveries.length > 0;
+
+  // Check if this is an admin date task
+  const isAdminDate = task.label.startsWith('[ADMIN-DATE]');
+  if (isAdminDate) {
+    if (task.scheduled_date) {
+      const date = new Date(task.scheduled_date + 'T00:00:00');
+      const formatted = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      displayLabel = displayLabel + ' — ' + formatted;
+    } else {
+      displayLabel = displayLabel + ' — Pending';
+    }
+  }
+
+  // Check if this is an admin speed task
+  const isAdminSpeed = task.label.startsWith('[ADMIN-SPEED]');
+  const hasSpeedData = isAdminSpeed && (task.upload_speed || task.download_speed);
+  const uploadBelowMin = task.upload_speed && parseFloat(task.upload_speed) < 10;
+  const downloadBelowMin = task.download_speed && parseFloat(task.download_speed) < 10;
+  const speedWarning = hasSpeedData && (uploadBelowMin || downloadBelowMin);
+
+  // Check if this is an admin enclosure task
+  const isAdminEnclosure = task.label.startsWith('[ADMIN-ENCLOSURE]');
+  const hasEnclosureData = isAdminEnclosure && task.enclosure_type;
+  const isCustomColor = task.enclosure_type === 'custom' && task.enclosure_color === 'other';
+
+  // Check if this is an admin doc task (like COI upload)
+  const isAdminDoc = task.label.startsWith('[ADMIN-DOC]');
+  const hasDocData = isAdminDoc && task.document_url;
+  const isCOITask = isAdminDoc && task.label.toLowerCase().includes('coi');
+
+  // For COI tasks with document, replace the label entirely
+  if (isCOITask && hasDocData) {
+    displayLabel = 'Download Certificate of Insurance (COI)';
+  }
+
+  const getEnclosureLabel = () => {
+    if (!task.enclosure_type) return null;
+    if (task.enclosure_type === 'wrap') return 'Magnetic Wrap';
+    if (task.enclosure_type === 'custom') {
+      const colorLabels = {
+        'dove_grey': 'Dove Grey',
+        'macchiato': 'Macchiato',
+        'black': 'Black',
+        'other': task.custom_color_name || 'Custom Color'
+      };
+      return `Custom Architectural Enclosure — ${colorLabels[task.enclosure_color] || 'Color TBD'}`;
+    }
+    return null;
+  };
+
   return (
-    <div className={`subtask ${task.completed ? 'completed' : ''}`}>
+    <div className={`subtask ${task.completed ? 'completed' : ''} ${isAdminSpeed || isAdminEnclosure || hasDeliveryData ? 'has-detail-box' : ''}`}>
       <div className={`subtask-checkbox ${task.completed ? 'completed' : 'pending'}`}>
         {task.completed && <CheckIcon />}
       </div>
-      <span className="subtask-label">{task.label}</span>
+      <div className="subtask-content">
+        <span className="subtask-label">
+          {isCOITask && hasDocData ? (
+            <a href={task.document_url} target="_blank" rel="noopener noreferrer" className="coi-download-link">
+              {displayLabel}
+            </a>
+          ) : (
+            displayLabel
+          )}
+          {isAdminSpeed && !hasSpeedData && !task.completed && (
+            <span className="speed-pending"> — Pending</span>
+          )}
+          {isAdminEnclosure && !hasEnclosureData && !task.completed && (
+            <span className="speed-pending"> — Pending</span>
+          )}
+          {hasDocData && !isCOITask && (
+            <a href={task.document_url} target="_blank" rel="noopener noreferrer" className="task-doc-link">
+              (View Document)
+            </a>
+          )}
+        </span>
+        {hasSpeedData && (
+          <div className={`speed-results-box ${speedWarning ? 'warning' : 'success'}`}>
+            <div className="speed-values">
+              <div className={`speed-value ${uploadBelowMin ? 'below-min' : ''}`}>
+                <span className="speed-label">Upload:</span>
+                <span className="speed-number">{task.upload_speed || '—'} Mbps</span>
+              </div>
+              <div className={`speed-value ${downloadBelowMin ? 'below-min' : ''}`}>
+                <span className="speed-label">Download:</span>
+                <span className="speed-number">{task.download_speed || '—'} Mbps</span>
+              </div>
+            </div>
+            {speedWarning && (
+              <div className="speed-warning">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/>
+                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <span>This location will require network drops due to a cellular signal less than the minimum speed required to run transactions without issues.</span>
+              </div>
+            )}
+          </div>
+        )}
+        {hasEnclosureData && (
+          <EnclosureInfoBox
+            enclosureLabel={getEnclosureLabel()}
+            isCustomColor={isCustomColor}
+          />
+        )}
+        {hasDeliveryData && (
+          <div className="delivery-results-box">
+            {deliveries.filter(d => d.equipment).map((delivery, idx) => (
+              <div key={idx} className="delivery-item">
+                <div className="delivery-equipment">{delivery.equipment}</div>
+                <div className="delivery-values">
+                  {delivery.date && (
+                    <div className="delivery-value">
+                      <span className="delivery-label">Date:</span>
+                      <span className="delivery-data">{new Date(delivery.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                    </div>
+                  )}
+                  {delivery.carrier && (
+                    <div className="delivery-value">
+                      <span className="delivery-label">Carrier:</span>
+                      <span className="delivery-data">{delivery.carrier}</span>
+                    </div>
+                  )}
+                  {delivery.tracking && (
+                    <div className="delivery-value">
+                      <span className="delivery-label">Tracking #:</span>
+                      <span className="delivery-data">{delivery.tracking}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+            <div className="delivery-note">
+              Note: the equipment delivery date may not be the same date as the official install of the equipment. See System Installation below.
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-// Survey Results Component
+// Survey link for in-progress survey phases
+function EnclosureInfoBox({ enclosureLabel, isCustomColor }) {
+  const [showModal, setShowModal] = useState(false);
+
+  return (
+    <>
+      <div className={`enclosure-results-box ${isCustomColor ? 'custom-color' : ''}`}>
+        <div className="enclosure-value">
+          <span className="enclosure-type-label">
+            This location is getting: {enclosureLabel}
+            <button className="whats-this-link" onClick={() => setShowModal(true)}>what's this?</button>
+          </span>
+        </div>
+        {isCustomColor && (
+          <div className="enclosure-warning">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>Please allow additional 4-6 weeks for custom color enclosures.</span>
+          </div>
+        )}
+      </div>
+      {showModal && (
+        <div className="enclosure-modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="enclosure-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="enclosure-modal-close" onClick={() => setShowModal(false)}>×</button>
+            <img
+              src="https://xfkjszbkcmuumzjbnuev.supabase.co/storage/v1/object/public/project-files/pic%20of%20custom%20enclosure.png"
+              alt="Custom Enclosure Example"
+            />
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function SurveyCallToAction({ surveyToken, surveyClicks, surveyCompletions, pmTask, onTaskUpdate }) {
+  const [copied, setCopied] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const baseUrl = window.location.origin;
+  const surveyUrl = surveyToken
+    ? `${baseUrl}/survey/${surveyToken}`
+    : 'https://raptor-vending.com/building-survey/';
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(surveyUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  const handleTaskToggle = async () => {
+    if (!pmTask || updating || pmTask.completed) return; // Don't allow unchecking
+    setUpdating(true);
+    try {
+      await updateTask(pmTask.id, { completed: true });
+      if (onTaskUpdate) onTaskUpdate();
+    } catch (err) {
+      console.error('Error updating task:', err);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  return (
+    <div className="survey-cta">
+      <div className="notice-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+          <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+          <path d="M9 12l2 2 4-4"/>
+        </svg>
+        <span>Property Manager Action Items</span>
+      </div>
+      <div className="survey-cta-content">
+        <p>Copy this link and share with building tenants to capture their snack and meal preferences:</p>
+        <div className="survey-url-field">
+          <input type="text" value={surveyUrl} readOnly />
+          <button className="copy-btn" onClick={handleCopy} title="Copy to clipboard">
+            {copied ? (
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+            )}
+          </button>
+        </div>
+
+        {/* PM Action Item */}
+        {pmTask && (
+          <div
+            className={`pm-action-item ${pmTask.completed ? 'completed' : ''}`}
+            onClick={handleTaskToggle}
+          >
+            <div className={`pm-checkbox ${pmTask.completed ? 'checked' : ''}`}>
+              {pmTask.completed && (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="14" height="14">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              )}
+            </div>
+            <span className="pm-action-label">
+              {pmTask.completed ? 'Survey link distributed to tenants' : 'Click here once you\'ve shared the survey with tenants'}
+            </span>
+          </div>
+        )}
+
+        {(surveyClicks > 0 || surveyCompletions > 0) && (
+          <div className="survey-stats">
+            <span><strong>{surveyClicks || 0}</strong> clicks</span>
+            <span><strong>{surveyCompletions || 0}</strong> completed</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function SurveyResults({ results }) {
   return (
     <div className="survey-results">
@@ -290,15 +482,152 @@ function SurveyResults({ results }) {
   );
 }
 
-// Property Responsibility Notice
-function PropertyNotice({ contractorInfo }) {
+function PropertyNotice({ contractorInfo, tasks = [], onRefresh, document, globalDocuments }) {
+  // Use global electrical specs if available, otherwise fall back to phase document
+  const specsDoc = globalDocuments?.electrical_specs?.url
+    ? globalDocuments.electrical_specs
+    : document;
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [updating, setUpdating] = useState(null);
+
+  // Filter to only PM-actionable tasks, keeping original sort order
+  const pmActionTasks = tasks.filter(t => t.label.startsWith('[PM]') || t.label.startsWith('[PM-DATE]') || t.label.startsWith('[PM-TEXT]'));
+
+  const handleTaskToggle = async (task) => {
+    if (updating || task.completed) return;
+    setUpdating(task.id);
+    try {
+      await updateTask(task.id, { completed: true });
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      console.error('Error updating task:', err);
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  const handleDateTaskComplete = async (task) => {
+    if (!selectedDate || updating) return;
+    setUpdating(task.id);
+    try {
+      await updateTask(task.id, { completed: true });
+      if (onRefresh) onRefresh();
+      setShowDatePicker(false);
+    } catch (err) {
+      console.error('Error updating task:', err);
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  const getTaskLabel = (label) => {
+    return label.replace('[PM] ', '').replace('[PM-DATE] ', '').replace('[PM-TEXT] ', '');
+  };
+
+  const getPromptForTask = (task) => {
+    if (task.label.includes('quotes')) return 'Click here once you\'ve obtained contractor quotes';
+    if (task.label.includes('installed')) return 'Click here once all electrical and optional networking is installed';
+    if (task.label.startsWith('[PM-DATE]')) return 'Click here once contractor is selected and install is scheduled';
+    return 'Click to mark complete';
+  };
+
   return (
     <div className="property-notice">
       <div className="notice-header">
-        <AlertIcon />
-        <span>Property Responsibility</span>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+          <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+          <path d="M9 12l2 2 4-4"/>
+        </svg>
+        <span>Property Manager Action Items</span>
       </div>
-      <p>Electrical preparation is managed by your facilities team. We've provided all specifications needed for contractor quotes.</p>
+      <p>Property is responsible for infrastructure preparation—dedicated 15A circuit for Smart Cooker™ and <strong>optional</strong> ethernet drops for real-time operations. We provide specifications; property team coordinates contractor quotes and installation.</p>
+
+      {specsDoc?.url && (
+        <a href={specsDoc.url} target="_blank" rel="noopener noreferrer" className="spec-sheet-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Download the Electrical and Networking Specifications
+        </a>
+      )}
+
+      {/* PM Action Items - rendered in database sort order */}
+      <div className="pm-action-items">
+        {pmActionTasks.map((task, idx) => {
+          // Each task depends on the previous PM task being completed
+          const prevTask = idx > 0 ? pmActionTasks[idx - 1] : null;
+          const isDisabled = prevTask && !prevTask.completed;
+          const isDateTask = task.label.startsWith('[PM-DATE]');
+
+          // Date task that needs date picker
+          if (isDateTask && !task.completed) {
+            if (showDatePicker === task.id) {
+              return (
+                <div key={task.id} className="pm-date-picker">
+                  <label>Scheduled Installation Date:</label>
+                  <div className="pm-date-input-row">
+                    <input
+                      type="date"
+                      value={selectedDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                      min={new Date().toISOString().split('T')[0]}
+                    />
+                    <button
+                      className="pm-date-confirm"
+                      onClick={() => handleDateTaskComplete(task)}
+                      disabled={!selectedDate || updating}
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      className="pm-date-cancel"
+                      onClick={() => setShowDatePicker(false)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <div
+                key={task.id}
+                className={`pm-action-item electrical ${isDisabled ? 'disabled' : ''}`}
+                onClick={() => !isDisabled && setShowDatePicker(task.id)}
+              >
+                <div className="pm-checkbox"></div>
+                <span className="pm-action-label">{getPromptForTask(task)}</span>
+              </div>
+            );
+          }
+
+          // Regular PM task or completed date task
+          return (
+            <div
+              key={task.id}
+              className={`pm-action-item electrical ${task.completed ? 'completed' : ''} ${isDisabled ? 'disabled' : ''}`}
+              onClick={() => !isDisabled && !task.completed && handleTaskToggle(task)}
+            >
+              <div className={`pm-checkbox ${task.completed ? 'checked' : ''}`}>
+                {task.completed && (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="14" height="14">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                )}
+              </div>
+              <span className="pm-action-label">
+                {task.completed ? getTaskLabel(task.label) : getPromptForTask(task)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
       {contractorInfo && (
         <div className="contractor-info">
           <span className="contractor-label">Selected Contractor:</span>
@@ -306,14 +635,153 @@ function PropertyNotice({ contractorInfo }) {
           <span className="contractor-date">Scheduled: {contractorInfo.scheduledDate}</span>
         </div>
       )}
+
     </div>
   );
 }
 
-// Timeline Phase Component
-function TimelinePhase({ phase, phaseNumber }) {
-  const [isExpanded, setIsExpanded] = useState(phase.status === 'in-progress');
-  
+function BuildingAccessNotice({ tasks = [], onRefresh, globalDocuments }) {
+  const [updating, setUpdating] = useState(null);
+  const [textValues, setTextValues] = useState({});
+
+  // Filter to only PM-actionable tasks (including text input tasks)
+  const pmTasks = tasks.filter(t => t.label.startsWith('[PM]') || t.label.startsWith('[PM-TEXT]'));
+
+  // Initialize text values from tasks
+  React.useEffect(() => {
+    const initialValues = {};
+    tasks.forEach(t => {
+      if (t.label.startsWith('[PM-TEXT]')) {
+        initialValues[t.id] = t.pm_text_value || '';
+      }
+    });
+    setTextValues(initialValues);
+  }, [tasks]);
+
+  const handleTaskToggle = async (task) => {
+    if (updating || task.completed) return;
+    setUpdating(task.id);
+    try {
+      await updateTask(task.id, { completed: true });
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      console.error('Error updating task:', err);
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  const handleTextTaskComplete = async (task) => {
+    const textValue = textValues[task.id];
+    if (!textValue || !textValue.trim() || updating) return;
+    setUpdating(task.id);
+    try {
+      await updateTask(task.id, { completed: true, pm_text_value: textValue.trim() });
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      console.error('Error updating task:', err);
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  const getTaskLabel = (label) => {
+    return label.replace('[PM] ', '').replace('[PM-TEXT] ', '');
+  };
+
+  const getPromptForTask = (task) => {
+    if (task.label.includes('vendor list')) return 'Click once Raptor Vending is added to approved vendor list';
+    if (task.label.includes('badges') || task.label.includes('keyfobs')) return 'Click once access credentials are provided';
+    if (task.label.includes('Emergency contact')) return 'Click once emergency contact list is provided';
+    if (task.label.includes('Loading dock') || task.label.includes('freight elevator')) return 'Click once loading dock/freight elevator access is scheduled';
+    return 'Click to mark complete';
+  };
+
+  if (pmTasks.length === 0) return null;
+
+  return (
+    <div className="building-access-notice">
+      <div className="notice-header">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+          <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+          <path d="M9 12l2 2 4-4"/>
+        </svg>
+        <span>Property Manager Action Items</span>
+      </div>
+      <p>Please complete the following items for building access:</p>
+
+      <div className="pm-action-items">
+        {pmTasks.map((task, idx) => {
+          const prevTask = idx > 0 ? pmTasks[idx - 1] : null;
+          const isDisabled = prevTask && !prevTask.completed;
+          const isTextTask = task.label.startsWith('[PM-TEXT]');
+
+          // Text input task
+          if (isTextTask) {
+            return (
+              <div
+                key={task.id}
+                className={`pm-action-item access pm-text-task ${task.completed ? 'completed' : ''} ${isDisabled ? 'disabled' : ''}`}
+              >
+                <div
+                  className={`pm-checkbox ${task.completed ? 'checked' : ''}`}
+                  onClick={() => !isDisabled && !task.completed && textValues[task.id]?.trim() && handleTextTaskComplete(task)}
+                >
+                  {task.completed && (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="14" height="14">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  )}
+                </div>
+                <div className="pm-text-task-content">
+                  <span className="pm-action-label">{getTaskLabel(task.label)}</span>
+                  {!task.completed ? (
+                    <input
+                      type="text"
+                      className="pm-text-inline-input"
+                      placeholder="Enter name of insured exactly how you want it to appear on the COI"
+                      value={textValues[task.id] || ''}
+                      onChange={(e) => setTextValues({ ...textValues, [task.id]: e.target.value })}
+                      disabled={isDisabled}
+                    />
+                  ) : (
+                    <span className="pm-text-value">{task.pm_text_value}</span>
+                  )}
+                </div>
+              </div>
+            );
+          }
+
+          // Regular PM task
+          return (
+            <div
+              key={task.id}
+              className={`pm-action-item access ${task.completed ? 'completed' : ''} ${isDisabled ? 'disabled' : ''}`}
+              onClick={() => !isDisabled && !task.completed && handleTaskToggle(task)}
+            >
+              <div className={`pm-checkbox ${task.completed ? 'checked' : ''}`}>
+                {task.completed && (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="14" height="14">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                )}
+              </div>
+              <span className="pm-action-label">
+                {task.completed ? getTaskLabel(task.label) : getPromptForTask(task)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function TimelinePhase({ phase, phaseNumber, locationImages = [], surveyToken, surveyClicks, surveyCompletions, onRefresh, globalDocuments }) {
+  const [isExpanded, setIsExpanded] = useState(true);
+  const [previewImage, setPreviewImage] = useState(null);
+
   const getMarkerContent = () => {
     if (phase.status === 'completed') {
       return <CheckIcon />;
@@ -327,7 +795,7 @@ function TimelinePhase({ phase, phaseNumber }) {
         {getMarkerContent()}
       </div>
       <div className="timeline-content">
-        <div 
+        <div
           className="phase-header"
           onClick={() => setIsExpanded(!isExpanded)}
         >
@@ -338,42 +806,133 @@ function TimelinePhase({ phase, phaseNumber }) {
             )}
           </div>
           <span className={`phase-status ${phase.status}`}>
-            {phase.status === 'completed' ? 'Completed' : 
+            {phase.status === 'completed' ? 'Completed' :
              phase.status === 'in-progress' ? 'In Progress' : 'Pending'}
           </span>
         </div>
-        
-        <div className="phase-dates">
-          {phase.isApproximate ? (
-            <span className="approximate-dates">{phase.startDate} – {phase.endDate}</span>
-          ) : (
-            <span>{phase.startDate} – {phase.endDate}</span>
-          )}
-        </div>
-        
+
+        {(phase.startDate || phase.endDate) && (
+          <div className="phase-dates">
+            {phase.isApproximate ? (
+              <span className="approximate-dates">
+                {phase.startDate === phase.endDate
+                  ? formatDisplayDate(phase.startDate)
+                  : `${formatDisplayDate(phase.startDate) || 'TBD'} – ${formatDisplayDate(phase.endDate) || 'TBD'}`}
+              </span>
+            ) : (
+              <span>
+                {phase.startDate === phase.endDate
+                  ? formatDisplayDate(phase.startDate)
+                  : `${formatDisplayDate(phase.startDate) || 'TBD'} – ${formatDisplayDate(phase.endDate) || 'TBD'}`}
+              </span>
+            )}
+          </div>
+        )}
+
         <div className={`phase-details ${isExpanded ? 'expanded' : ''}`}>
           <div className="phase-description">{phase.description}</div>
-          
-          {phase.propertyResponsibility && (
-            <PropertyNotice contractorInfo={phase.contractorInfo} />
+
+          {/* Show document link if attached (but not for property responsibility phases - shown in PropertyNotice) */}
+          {phase.document && !phase.propertyResponsibility && (
+            <div className="phase-document">
+              <a href={phase.document.url} target="_blank" rel="noopener noreferrer" className="document-link">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                  <polyline points="10 9 9 9 8 9"/>
+                </svg>
+                {phase.document.label}
+              </a>
+            </div>
           )}
-          
+
+          {/* Show documents for Site Assessment phase */}
+          {phase.documents && phase.documents.length > 0 && (
+            <div className="phase-images">
+              <div className="phase-images-title">Site Images</div>
+              <div className="phase-images-grid">
+                {phase.documents.map((doc, idx) => {
+                  const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(doc.url);
+                  return isImage ? (
+                    <div key={doc.id || idx} className="phase-image-thumb" onClick={() => setPreviewImage(doc.url)}>
+                      <img src={doc.url} alt={doc.name} />
+                    </div>
+                  ) : (
+                    <a key={doc.id || idx} href={doc.url} target="_blank" rel="noopener noreferrer" className="phase-doc-thumb">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="24" height="24">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                      </svg>
+                      <span>{doc.name}</span>
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Show legacy location images if present */}
+          {locationImages && locationImages.length > 0 && (
+            <div className="phase-images">
+              <div className="phase-images-title">Site Photos</div>
+              <div className="phase-images-grid">
+                {locationImages.map((img, idx) => (
+                  <div key={idx} className="phase-image-thumb" onClick={() => setPreviewImage(img)}>
+                    <img src={img} alt={`Site ${idx + 1}`} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Image Preview Modal */}
+          {previewImage && (
+            <div className="image-preview-overlay" onClick={() => setPreviewImage(null)}>
+              <div className="image-preview-content" onClick={(e) => e.stopPropagation()}>
+                <button className="image-preview-close" onClick={() => setPreviewImage(null)}>×</button>
+                <img src={previewImage} alt="Preview" />
+              </div>
+            </div>
+          )}
+
+          {/* Show survey CTA for survey phase */}
+          {phase.title.toLowerCase().includes('survey') && (
+            <SurveyCallToAction
+              surveyToken={surveyToken}
+              surveyClicks={surveyClicks}
+              surveyCompletions={surveyCompletions}
+              pmTask={phase.tasks.find(t => t.label.startsWith('[PM]'))}
+              onTaskUpdate={onRefresh}
+            />
+          )}
+
+          {phase.propertyResponsibility && (
+            <PropertyNotice contractorInfo={phase.contractorInfo} tasks={phase.tasks} onRefresh={onRefresh} document={phase.document} globalDocuments={globalDocuments} />
+          )}
+
+          {/* Building Access & Coordination phase PM tasks */}
+          {phase.title.toLowerCase().includes('building access') && (
+            <BuildingAccessNotice tasks={phase.tasks} onRefresh={onRefresh} globalDocuments={globalDocuments} />
+          )}
+
           {phase.surveyResults && (
             <SurveyResults results={phase.surveyResults} />
           )}
-          
+
           <div className="subtasks">
             <div className="subtasks-title">
-              {phase.status === 'completed' ? 'Completed Tasks' : 
+              {phase.status === 'completed' ? 'Completed Tasks' :
                phase.status === 'in-progress' ? 'Task Progress' : 'Upcoming Tasks'}
             </div>
             {phase.tasks.map((task, idx) => (
-              <TaskItem key={idx} task={task} />
+              <TaskItem key={idx} task={task} globalDocuments={globalDocuments} />
             ))}
           </div>
         </div>
-        
-        <button 
+
+        <button
           className="expand-toggle"
           onClick={() => setIsExpanded(!isExpanded)}
         >
@@ -384,21 +943,29 @@ function TimelinePhase({ phase, phaseNumber }) {
   );
 }
 
-// Timeline Component
-function Timeline({ phases }) {
+function Timeline({ phases, locationImages, surveyToken, surveyClicks, surveyCompletions, onRefresh, globalDocuments }) {
   return (
     <div className="timeline-section">
       <h2 className="section-title">Installation Timeline</h2>
       <div className="timeline">
         {phases.map((phase, idx) => (
-          <TimelinePhase key={phase.id} phase={phase} phaseNumber={idx + 1} />
+          <TimelinePhase
+            key={phase.id}
+            phase={phase}
+            phaseNumber={idx + 1}
+            locationImages={idx === 0 ? locationImages : []}
+            surveyToken={surveyToken}
+            surveyClicks={surveyClicks}
+            surveyCompletions={surveyCompletions}
+            onRefresh={onRefresh}
+            globalDocuments={globalDocuments}
+          />
         ))}
       </div>
     </div>
   );
 }
 
-// Equipment Card Component
 function EquipmentCard({ item }) {
   const getIcon = () => {
     if (item.name.includes('Fridge')) return <FridgeIcon />;
@@ -431,7 +998,6 @@ function EquipmentCard({ item }) {
   );
 }
 
-// Equipment Section Component
 function EquipmentSection({ equipment }) {
   return (
     <div className="equipment-section">
@@ -445,7 +1011,6 @@ function EquipmentSection({ equipment }) {
   );
 }
 
-// Contact Footer Component
 function ContactFooter({ projectManager }) {
   return (
     <footer className="contact-section">
@@ -457,7 +1022,7 @@ function ContactFooter({ projectManager }) {
           <a href={`tel:${projectManager.phone.replace(/[^0-9]/g, '')}`}>{projectManager.phone}</a>
         </p>
       </div>
-      <a href="tel:+13854386325" className="contact-btn">
+      <a href={`tel:${projectManager.phone.replace(/[^0-9]/g, '')}`} className="contact-btn">
         <PhoneIcon />
         Call Now
       </a>
@@ -465,32 +1030,323 @@ function ContactFooter({ projectManager }) {
   );
 }
 
-// Main App Component
-function App() {
-  const project = sampleProject;
+function PoweredBy() {
+  return (
+    <div className="powered-by">
+      <span>Powered by</span>
+      <a href="https://raptor-vending.com" target="_blank" rel="noopener noreferrer">
+        Raptor Vending
+      </a>
+      <span className="tagline">Food Infrastructure for Modern Workplaces</span>
+    </div>
+  );
+}
+
+// ============================================
+// PROJECT WIDGET (reusable for single & multi-project views)
+// ============================================
+function ProjectWidget({ project, showLogo = true, onRefresh }) {
+  return (
+    <div className="progress-widget">
+      <Header project={project} showLogo={showLogo} />
+      <OverallProgress
+        progress={project.overallProgress}
+        estimatedCompletion={project.estimatedCompletion}
+        daysRemaining={project.daysRemaining}
+      />
+      <Timeline phases={project.phases} locationImages={project.locationImages} surveyToken={project.surveyToken} surveyClicks={project.surveyClicks} surveyCompletions={project.surveyCompletions} onRefresh={onRefresh} globalDocuments={project.globalDocuments} />
+      <ContactFooter projectManager={project.projectManager} />
+    </div>
+  );
+}
+
+// ============================================
+// PAGE: Single Project View
+// ============================================
+function ProjectView() {
+  const { token } = useParams();
+  const [project, setProject] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  async function loadProject() {
+    try {
+      const data = await fetchProjectByToken(token);
+      if (!data) {
+        setError('Project not found');
+      } else {
+        setProject(data);
+      }
+    } catch (err) {
+      console.error('Error loading project:', err);
+      setError('Unable to load project');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    setLoading(true);
+    loadProject();
+  }, [token]);
+
+  if (loading) {
+    return <div className="loading">Loading project...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="app">
+        <div className="error">
+          <h2>Project Not Found</h2>
+          <p>{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="app">
-      <div className="progress-widget">
-        <Header project={project} />
-        <OverallProgress 
-          progress={project.overallProgress}
-          estimatedCompletion={project.estimatedCompletion}
-          daysRemaining={project.daysRemaining}
-        />
-        <Timeline phases={project.phases} />
-        <EquipmentSection equipment={project.equipment} />
-        <ContactFooter projectManager={project.projectManager} />
-      </div>
-      
-      <div className="powered-by">
-        <span>Powered by</span>
-        <a href="https://raptor-vending.com" target="_blank" rel="noopener noreferrer">
-          Raptor Vending
-        </a>
-        <span className="tagline">Food Infrastructure for Modern Workplaces</span>
-      </div>
+    <div className="pm-portal">
+      {/* Sidebar */}
+      <aside className="pm-sidebar">
+        <div className="pm-sidebar-header">
+          <Logo variant="light" height={120} />
+        </div>
+
+        <div className="pm-sidebar-info">
+          <h2>{project.propertyManager?.name || 'Property Manager'}</h2>
+          <p>{project.propertyManager?.company || ''}</p>
+        </div>
+
+        <nav className="pm-sidebar-nav">
+          <h3>Your Properties</h3>
+          <span className="pm-nav-link">{project.propertyName}</span>
+        </nav>
+
+        <div className="pm-sidebar-survey">
+          <h3>Employee Survey</h3>
+          <p>Share this survey with tenants to customize their menu preferences.</p>
+          <a
+            href={project.surveyToken ? `/survey/${project.surveyToken}` : 'https://raptor-vending.com/building-survey/'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="pm-survey-btn"
+          >
+            Share Survey →
+          </a>
+        </div>
+
+        {project.globalDocuments?.liability_insurance?.url && (
+          <div className="pm-sidebar-docs">
+            <span className="sidebar-doc-label">Need a copy of our<br />general liability policy?</span>
+            <a
+              href={project.globalDocuments.liability_insurance.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="sidebar-doc-link"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Download Here
+            </a>
+          </div>
+        )}
+
+        <div className="pm-sidebar-footer">
+          <PoweredBy />
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="pm-main">
+        <h1 className="pm-main-title">Installation Progress</h1>
+        <ProjectWidget project={project} showLogo={false} onRefresh={loadProject} />
+      </main>
     </div>
+  );
+}
+
+// ============================================
+// PAGE: Property Manager Portal (multi-project)
+// ============================================
+function PMPortal() {
+  const { token } = useParams();
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true);
+        const result = await fetchProjectsByPMToken(token);
+        if (!result) {
+          setError('Portal not found');
+        } else {
+          setData(result);
+        }
+      } catch (err) {
+        console.error('Error loading portal:', err);
+        setError('Unable to load portal');
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, [token]);
+
+  if (loading) {
+    return <div className="loading">Loading portal...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="app">
+        <div className="error">
+          <h2>Portal Not Found</h2>
+          <p>{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="pm-portal">
+      {/* Sidebar */}
+      <aside className="pm-sidebar">
+        <div className="pm-sidebar-header">
+          <Logo variant="light" height={120} />
+        </div>
+
+        <div className="pm-sidebar-info">
+          <h2>{data.propertyManager.name}</h2>
+          <p>{data.propertyManager.company}</p>
+        </div>
+
+        <nav className="pm-sidebar-nav">
+          <h3>Your Properties</h3>
+          {data.properties.map(prop => (
+            <a key={prop.id} href={`#property-${prop.id}`} className="pm-nav-link">
+              {prop.name}
+            </a>
+          ))}
+        </nav>
+
+        <div className="pm-sidebar-survey">
+          <h3>Employee Survey</h3>
+          <p>Share this survey with tenants to customize their menu preferences.</p>
+          <a
+            href="https://raptor-vending.com/building-survey/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="pm-survey-btn"
+          >
+            Share Survey →
+          </a>
+        </div>
+
+        <div className="pm-sidebar-footer">
+          <PoweredBy />
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="pm-main">
+        <h1 className="pm-main-title">Installation Progress</h1>
+        {data.projects.length === 0 ? (
+          <div className="no-projects">
+            <h2>No Active Projects</h2>
+            <p>You don't have any active installation projects at this time.</p>
+          </div>
+        ) : (
+          data.projects.map(project => (
+            <div key={project.publicToken} id={`property-${project.propertyName}`} className="pm-project-section">
+              <ProjectWidget project={project} showLogo={false} />
+            </div>
+          ))
+        )}
+      </main>
+    </div>
+  );
+}
+
+// ============================================
+// PAGE: Survey Redirect (tracks clicks)
+// ============================================
+function SurveyRedirect() {
+  const { token } = useParams();
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    async function trackAndRedirect() {
+      try {
+        await recordSurveyClick(token);
+      } catch (err) {
+        console.error('Error recording click:', err);
+        setError('Survey link not found');
+        return;
+      }
+      // Redirect to the actual survey
+      window.location.href = 'https://raptor-vending.com/building-survey/';
+    }
+    trackAndRedirect();
+  }, [token]);
+
+  if (error) {
+    return (
+      <div className="app">
+        <div className="error">
+          <h2>Survey Not Found</h2>
+          <p>This survey link is invalid or has expired.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return <div className="loading">Redirecting to survey...</div>;
+}
+
+// ============================================
+// PAGE: Home / Landing
+// ============================================
+function Home() {
+  return (
+    <div className="app">
+      <div className="home-container">
+        <div style={{ marginBottom: '30px' }}>
+          <Logo variant="dark" height={140} />
+        </div>
+        <h1>Installation Progress Portal</h1>
+        <p>Track your Raptor Vending installation in real-time.</p>
+        <p style={{ marginTop: '20px', color: '#888', fontSize: '0.9em' }}>
+          Use the link provided by your project manager to access your installation progress.
+        </p>
+        <div style={{ marginTop: '40px' }}>
+          <Link to="/admin" className="contact-btn">
+            Admin Access
+          </Link>
+        </div>
+      </div>
+      <PoweredBy />
+    </div>
+  );
+}
+
+// ============================================
+// MAIN APP WITH ROUTING
+// ============================================
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/project/:token" element={<ProjectView />} />
+      <Route path="/pm/:token" element={<PMPortal />} />
+      <Route path="/survey/:token" element={<SurveyRedirect />} />
+      <Route path="/admin" element={<Admin />} />
+    </Routes>
   );
 }
 

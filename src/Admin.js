@@ -28,7 +28,14 @@ import {
 // ============================================
 // ADMIN DASHBOARD
 // ============================================
+const ADMIN_PASSWORD = process.env.REACT_APP_ADMIN_PASSWORD || 'raptorlive26';
+
 export default function Admin() {
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return sessionStorage.getItem('adminAuth') === 'true';
+  });
+  const [passwordInput, setPasswordInput] = useState('');
+  const [passwordError, setPasswordError] = useState(false);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('projects');
@@ -37,9 +44,22 @@ export default function Admin() {
   const [showModal, setShowModal] = useState(null);
   const [editItem, setEditItem] = useState(null);
 
+  function handlePasswordSubmit(e) {
+    e.preventDefault();
+    if (passwordInput === ADMIN_PASSWORD) {
+      sessionStorage.setItem('adminAuth', 'true');
+      setIsAuthenticated(true);
+      setPasswordError(false);
+    } else {
+      setPasswordError(true);
+    }
+  }
+
   useEffect(() => {
-    loadData();
-  }, []);
+    if (isAuthenticated) {
+      loadData();
+    }
+  }, [isAuthenticated]);
 
   async function loadData() {
     try {
@@ -65,6 +85,29 @@ export default function Admin() {
   async function handleSelectProject(project) {
     setSelectedProject(project);
     await loadProjectDetails(project.id);
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="admin-login">
+        <div className="admin-login-box">
+          <img src="/logo-light.png" alt="Raptor Vending" className="admin-login-logo" />
+          <h2>Admin Access</h2>
+          <form onSubmit={handlePasswordSubmit}>
+            <input
+              type="password"
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              placeholder="Enter password"
+              className={passwordError ? 'error' : ''}
+              autoFocus
+            />
+            {passwordError && <p className="error-message">Incorrect password</p>}
+            <button type="submit">Enter</button>
+          </form>
+        </div>
+      </div>
+    );
   }
 
   if (loading) {

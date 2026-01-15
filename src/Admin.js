@@ -6,6 +6,8 @@ import {
   fetchAllForAdmin,
   fetchProjectDetails,
   fetchActivityLog,
+  deleteActivityLog,
+  clearActivityLog,
   createPropertyManager,
   updatePropertyManager,
   createProperty,
@@ -2418,6 +2420,27 @@ function ActivityLog({ projects, locations, properties }) {
     }
   }
 
+  async function handleDelete(id) {
+    if (!window.confirm('Delete this activity entry?')) return;
+    try {
+      await deleteActivityLog(id);
+      setActivities(activities.filter(a => a.id !== id));
+    } catch (err) {
+      console.error('Error deleting activity:', err);
+    }
+  }
+
+  async function handleClearAll() {
+    const msg = filterProject ? 'Clear all activity for this project?' : 'Clear ALL activity logs?';
+    if (!window.confirm(msg)) return;
+    try {
+      await clearActivityLog(filterProject || null);
+      setActivities([]);
+    } catch (err) {
+      console.error('Error clearing activity:', err);
+    }
+  }
+
   function formatDate(dateString) {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -2442,22 +2465,27 @@ function ActivityLog({ projects, locations, properties }) {
     <div className="activity-log-section">
       <div className="section-header">
         <h2>Activity Log</h2>
-        <select
-          value={filterProject}
-          onChange={(e) => setFilterProject(e.target.value)}
-          className="activity-filter"
-        >
-          <option value="">All Projects</option>
-          {projects.map(p => {
-            const location = locations.find(l => l.id === p.location_id);
-            const property = location ? properties.find(pr => pr.id === location.property_id) : null;
-            return (
-              <option key={p.id} value={p.id}>
-                #{p.project_number} - {property?.name || 'Unknown'}
-              </option>
-            );
-          })}
-        </select>
+        <div className="activity-controls">
+          <select
+            value={filterProject}
+            onChange={(e) => setFilterProject(e.target.value)}
+            className="activity-filter"
+          >
+            <option value="">All Projects</option>
+            {projects.map(p => {
+              const location = locations.find(l => l.id === p.location_id);
+              const property = location ? properties.find(pr => pr.id === location.property_id) : null;
+              return (
+                <option key={p.id} value={p.id}>
+                  #{p.project_number} - {property?.name || 'Unknown'}
+                </option>
+              );
+            })}
+          </select>
+          {activities.length > 0 && (
+            <button className="btn-clear" onClick={handleClearAll}>Clear All</button>
+          )}
+        </div>
       </div>
 
       {loading ? (
@@ -2484,6 +2512,7 @@ function ActivityLog({ projects, locations, properties }) {
                   <span className="activity-time">{formatDate(activity.created_at)}</span>
                 </div>
               </div>
+              <button className="activity-delete" onClick={() => handleDelete(activity.id)} title="Delete">×</button>
             </div>
           ))}
         </div>

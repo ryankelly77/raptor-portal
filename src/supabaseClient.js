@@ -457,6 +457,22 @@ export async function fetchActivityLog(projectId = null) {
   return data || [];
 }
 
+export async function deleteActivityLog(id) {
+  const { error } = await supabase.from('activity_log').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function clearActivityLog(projectId = null) {
+  let query = supabase.from('activity_log').delete();
+  if (projectId) {
+    query = query.eq('project_id', projectId);
+  } else {
+    query = query.neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+  }
+  const { error } = await query;
+  if (error) throw error;
+}
+
 export async function deleteTask(id) {
   const { error } = await supabase.from('tasks').delete().eq('id', id);
   if (error) throw error;

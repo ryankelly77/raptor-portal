@@ -844,6 +844,46 @@ body {
 .activity-time {
   color: var(--text-muted);
 }
+
+.activity-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.btn-clear {
+  padding: 8px 14px;
+  background: #ffebee;
+  color: #c62828;
+  border: 1px solid #ffcdd2;
+  border-radius: 6px;
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-clear:hover {
+  background: #ffcdd2;
+}
+
+.activity-delete {
+  background: none;
+  border: none;
+  color: #ccc;
+  font-size: 1.2em;
+  cursor: pointer;
+  padding: 4px 8px;
+  opacity: 0;
+  transition: opacity 0.2s, color 0.2s;
+}
+
+.activity-item:hover .activity-delete {
+  opacity: 1;
+}
+
+.activity-delete:hover {
+  color: #e53935;
+}
 .btn-add-small { padding: 6px 12px; font-size: 0.85em; background: var(--raptor-orange); color: white; border: none; border-radius: 4px; cursor: pointer; }
 
 /* Forms */

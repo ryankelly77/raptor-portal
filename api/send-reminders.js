@@ -37,9 +37,11 @@ async function sendEmail(to, subject, html) {
   return response.json();
 }
 
-function generateReminderEmail(project, incompleteTasks, propertyName) {
+function generateReminderEmail(project, incompleteTasks, propertyName, firstName) {
   const projectUrl = `${PORTAL_URL}/${project.public_token}`;
-  const taskList = incompleteTasks.map(t => `<li>${t.label.replace(/^\[(PM|PM-TEXT)\]\s*/, '')}</li>`).join('');
+  const logoUrl = `${PORTAL_URL}/logo-light.png`;
+  const taskList = incompleteTasks.map(t => `<li style="margin-bottom: 8px;">${t.label.replace(/^\[(PM|PM-TEXT)\]\s*/, '')}</li>`).join('');
+  const greeting = firstName ? `Hello ${firstName},` : 'Hello,';
 
   return `
     <!DOCTYPE html>
@@ -48,26 +50,26 @@ function generateReminderEmail(project, incompleteTasks, propertyName) {
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
-    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <div style="background: #202020; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
-        <h1 style="color: #fff; margin: 0; font-size: 24px;">Raptor Vending</h1>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background: #f5f5f5;">
+      <div style="background: #202020; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0;">
+        <img src="${logoUrl}" alt="Raptor Vending" style="max-width: 200px; height: auto;" />
       </div>
 
-      <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px;">
-        <p>Hello,</p>
+      <div style="background: #ffffff; padding: 30px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <p style="font-size: 16px;">${greeting}</p>
 
-        <p>This is a friendly reminder that there are <strong>${incompleteTasks.length} item${incompleteTasks.length !== 1 ? 's' : ''}</strong> remaining for the vending installation at <strong>${propertyName}</strong>.</p>
+        <p style="font-size: 16px;">This is a friendly reminder that there are <strong>${incompleteTasks.length} item${incompleteTasks.length !== 1 ? 's' : ''}</strong> remaining for the vending installation at <strong>${propertyName}</strong>.</p>
 
-        <p><strong>Remaining items:</strong></p>
-        <ul style="background: #fff; padding: 15px 15px 15px 35px; border-radius: 4px; border: 1px solid #e0e0e0;">
+        <p style="font-size: 16px; margin-top: 24px;"><strong>Remaining items:</strong></p>
+        <ul style="background: #f9f9f9; padding: 20px 20px 20px 40px; border-radius: 4px; border-left: 4px solid #4CAF50; margin: 16px 0;">
           ${taskList}
         </ul>
 
         <p style="text-align: center; margin: 30px 0;">
-          <a href="${projectUrl}" style="background: #4CAF50; color: white; padding: 12px 30px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">Complete Your Items</a>
+          <a href="${projectUrl}" style="background: #4CAF50; color: white; padding: 14px 36px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block; font-size: 16px;">Complete Your Items</a>
         </p>
 
-        <p style="color: #666; font-size: 14px;">If you have any questions, please contact your Raptor Vending representative.</p>
+        <p style="color: #666; font-size: 14px; margin-top: 30px;">If you have any questions, please contact your Raptor Vending representative.</p>
       </div>
 
       <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
@@ -108,6 +110,7 @@ export default async function handler(req, res) {
           property:properties (
             name,
             property_manager:property_managers (
+              name,
               email
             )
           )
@@ -134,6 +137,8 @@ export default async function handler(req, res) {
     for (const project of projects || []) {
       const propertyName = project.location?.property?.name || project.location?.name || project.project_number;
       const pmEmail = project.location?.property?.property_manager?.email;
+      const pmFullName = project.location?.property?.property_manager?.name || '';
+      const firstName = pmFullName.split(' ')[0] || '';
 
       // Skip if reminded in the last 24 hours
       if (project.last_reminder_sent && new Date(project.last_reminder_sent) > oneDayAgo) {
@@ -166,7 +171,7 @@ export default async function handler(req, res) {
 
       // Send the reminder email
       try {
-        const html = generateReminderEmail(project, incompleteTasks, propertyName);
+        const html = generateReminderEmail(project, incompleteTasks, propertyName, firstName);
         await sendEmail(
           recipientEmail,
           `Reminder: ${incompleteTasks.length} item${incompleteTasks.length !== 1 ? 's' : ''} remaining for ${propertyName}`,

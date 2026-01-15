@@ -317,7 +317,9 @@ function ProjectEditor({ project, details, locations, properties, managers, onBa
     raptor_pm_phone: project.raptor_pm_phone || '',
     estimated_completion: project.estimated_completion || '',
     overall_progress: project.overall_progress || 0,
-    is_active: project.is_active
+    is_active: project.is_active,
+    email_reminders_enabled: project.email_reminders_enabled || false,
+    reminder_email: project.reminder_email || ''
   });
   const [showPhaseModal, setShowPhaseModal] = useState(false);
   const [editingPhase, setEditingPhase] = useState(null);
@@ -568,6 +570,29 @@ function ProjectEditor({ project, details, locations, properties, managers, onBa
                   <option value="false">Inactive</option>
                 </select>
               </div>
+              <div className="form-group full-width">
+                <label className="toggle-label">
+                  <input
+                    type="checkbox"
+                    checked={projectForm.email_reminders_enabled}
+                    onChange={e => setProjectForm({ ...projectForm, email_reminders_enabled: e.target.checked })}
+                  />
+                  <span className="toggle-switch"></span>
+                  Email Reminders {projectForm.email_reminders_enabled ? 'ON' : 'OFF'}
+                </label>
+              </div>
+              {projectForm.email_reminders_enabled && (
+                <div className="form-group full-width">
+                  <label>Reminder Email (optional override)</label>
+                  <input
+                    type="email"
+                    placeholder={propertyManager?.email || 'Uses property manager email'}
+                    value={projectForm.reminder_email}
+                    onChange={e => setProjectForm({ ...projectForm, reminder_email: e.target.value })}
+                  />
+                  <span className="form-hint">Leave blank to use property manager's email</span>
+                </div>
+              )}
             </div>
           ) : (
             <div className="details-grid">
@@ -583,6 +608,12 @@ function ProjectEditor({ project, details, locations, properties, managers, onBa
                 </button>
               </div>
               <div><strong>Public Token:</strong> <code>{project.public_token}</code></div>
+              <div>
+                <strong>Email Reminders:</strong>{' '}
+                <span className={`reminder-status ${project.email_reminders_enabled ? 'on' : 'off'}`}>
+                  {project.email_reminders_enabled ? 'ON' : 'OFF'}
+                </span>
+              </div>
             </div>
           )}
         </div>

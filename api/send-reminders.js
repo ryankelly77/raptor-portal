@@ -37,8 +37,8 @@ async function sendEmail(to, subject, html) {
   return response.json();
 }
 
-function generateReminderEmail(project, incompleteTasks) {
-  const projectUrl = `${PORTAL_URL}/${project.slug}`;
+function generateReminderEmail(project, incompleteTasks, propertyName) {
+  const projectUrl = `${PORTAL_URL}/${project.public_token}`;
   const taskList = incompleteTasks.map(t => `<li>${t.label.replace(/^\[(PM|PM-TEXT)\]\s*/, '')}</li>`).join('');
 
   return `
@@ -56,7 +56,7 @@ function generateReminderEmail(project, incompleteTasks) {
       <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px;">
         <p>Hello,</p>
 
-        <p>This is a friendly reminder that there are <strong>${incompleteTasks.length} item${incompleteTasks.length !== 1 ? 's' : ''}</strong> remaining for the vending installation at <strong>${project.name}</strong>.</p>
+        <p>This is a friendly reminder that there are <strong>${incompleteTasks.length} item${incompleteTasks.length !== 1 ? 's' : ''}</strong> remaining for the vending installation at <strong>${propertyName}</strong>.</p>
 
         <p><strong>Remaining items:</strong></p>
         <ul style="background: #fff; padding: 15px 15px 15px 35px; border-radius: 4px; border: 1px solid #e0e0e0;">
@@ -93,17 +93,25 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Fetch projects with reminders enabled
+    // Fetch projects with reminders enabled, including location/property/PM info
     const { data: projects, error: projectsError } = await supabase
       .from('projects')
       .select(`
         id,
-        name,
-        slug,
-        contact_email,
+        public_token,
+        project_number,
         reminder_email,
         email_reminders_enabled,
         last_reminder_sent,
+        location:locations (
+          name,
+          property:properties (
+            name,
+            property_manager:property_managers (
+              email
+            )
+          )
+        ),
         phases (
           id,
           tasks (
@@ -124,9 +132,12 @@ export default async function handler(req, res) {
     const oneDayAgo = new Date(now - 24 * 60 * 60 * 1000);
 
     for (const project of projects || []) {
+      const propertyName = project.location?.property?.name || project.location?.name || project.project_number;
+      const pmEmail = project.location?.property?.property_manager?.email;
+
       // Skip if reminded in the last 24 hours
       if (project.last_reminder_sent && new Date(project.last_reminder_sent) > oneDayAgo) {
-        results.push({ project: project.name, status: 'skipped', reason: 'Recently reminded' });
+        results.push({ project: propertyName, status: 'skipped', reason: 'Recently reminded' });
         continue;
       }
 
@@ -142,23 +153,23 @@ export default async function handler(req, res) {
 
       // Skip if no incomplete tasks
       if (incompleteTasks.length === 0) {
-        results.push({ project: project.name, status: 'skipped', reason: 'No incomplete tasks' });
+        results.push({ project: propertyName, status: 'skipped', reason: 'No incomplete tasks' });
         continue;
       }
 
-      // Determine recipient email
-      const recipientEmail = project.reminder_email || project.contact_email;
+      // Determine recipient email (reminder_email override, or property manager email)
+      const recipientEmail = project.reminder_email || pmEmail;
       if (!recipientEmail) {
-        results.push({ project: project.name, status: 'skipped', reason: 'No email address' });
+        results.push({ project: propertyName, status: 'skipped', reason: 'No email address' });
         continue;
       }
 
       // Send the reminder email
       try {
-        const html = generateReminderEmail(project, incompleteTasks);
+        const html = generateReminderEmail(project, incompleteTasks, propertyName);
         await sendEmail(
           recipientEmail,
-          `Reminder: ${incompleteTasks.length} item${incompleteTasks.length !== 1 ? 's' : ''} remaining for ${project.name}`,
+          `Reminder: ${incompleteTasks.length} item${incompleteTasks.length !== 1 ? 's' : ''} remaining for ${propertyName}`,
           html
         );
 
@@ -168,9 +179,9 @@ export default async function handler(req, res) {
           .update({ last_reminder_sent: now.toISOString() })
           .eq('id', project.id);
 
-        results.push({ project: project.name, status: 'sent', to: recipientEmail, tasks: incompleteTasks.length });
+        results.push({ project: propertyName, status: 'sent', to: recipientEmail, tasks: incompleteTasks.length });
       } catch (emailError) {
-        results.push({ project: project.name, status: 'error', error: emailError.message });
+        results.push({ project: propertyName, status: 'error', error: emailError.message });
       }
     }
 

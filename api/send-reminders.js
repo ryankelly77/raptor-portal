@@ -37,11 +37,25 @@ async function sendEmail(to, subject, html) {
   return response.json();
 }
 
-function generateReminderEmail(project, incompleteTasks, propertyName, firstName) {
+function generateReminderEmail(project, allTasks, incompleteCount, propertyName, firstName) {
   const projectUrl = `${PORTAL_URL}/${project.public_token}`;
   const logoUrl = `${PORTAL_URL}/logo-light.png`;
-  const taskList = incompleteTasks.map(t => `<li style="margin-bottom: 8px;">${t.label.replace(/^\[(PM|PM-TEXT)\]\s*/, '')}</li>`).join('');
   const greeting = firstName ? `Hello ${firstName},` : 'Hello,';
+
+  const taskList = allTasks.map(t => {
+    const label = t.label.replace(/^\[(PM|PM-TEXT)\]\s*/, '');
+    if (t.completed) {
+      return `<div style="margin-bottom: 10px; display: flex; align-items: flex-start;">
+        <span style="color: #4CAF50; font-size: 18px; margin-right: 10px; line-height: 1.2;">&#10003;</span>
+        <span style="color: #999; text-decoration: line-through;">${label}</span>
+      </div>`;
+    } else {
+      return `<div style="margin-bottom: 10px; display: flex; align-items: flex-start;">
+        <span style="color: #FF6B00; font-size: 18px; margin-right: 10px; line-height: 1.2;">&#9675;</span>
+        <span>${label}</span>
+      </div>`;
+    }
+  }).join('');
 
   return `
     <!DOCTYPE html>
@@ -58,12 +72,12 @@ function generateReminderEmail(project, incompleteTasks, propertyName, firstName
       <div style="background: #ffffff; padding: 30px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
         <p style="font-size: 16px;">${greeting}</p>
 
-        <p style="font-size: 16px;">This is a friendly reminder that there are <strong>${incompleteTasks.length} item${incompleteTasks.length !== 1 ? 's' : ''}</strong> remaining for the vending installation at <strong>${propertyName}</strong>.</p>
+        <p style="font-size: 16px;">This is a friendly reminder that there are <strong>${incompleteCount} item${incompleteCount !== 1 ? 's' : ''}</strong> remaining for the vending installation at <strong>${propertyName}</strong>.</p>
 
-        <p style="font-size: 16px; margin-top: 24px;"><strong>Remaining items:</strong></p>
-        <ul style="background: #f9f9f9; padding: 20px 20px 20px 40px; border-radius: 4px; border-left: 4px solid #FF6B00; margin: 16px 0;">
+        <p style="font-size: 16px; margin-top: 24px;"><strong>Your progress:</strong></p>
+        <div style="background: #f9f9f9; padding: 20px; border-radius: 4px; border-left: 4px solid #FF6B00; margin: 16px 0;">
           ${taskList}
-        </ul>
+        </div>
 
         <p style="text-align: center; margin: 30px 0;">
           <a href="${projectUrl}" style="background: #FF6B00; color: white; padding: 14px 36px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block; font-size: 16px;">Complete Your Items</a>
@@ -148,18 +162,20 @@ export default async function handler(req, res) {
         continue;
       }
 
-      // Get incomplete PM tasks
-      const incompleteTasks = [];
+      // Get all PM tasks
+      const allPmTasks = [];
       for (const phase of project.phases || []) {
         for (const task of phase.tasks || []) {
-          if ((task.label.startsWith('[PM]') || task.label.startsWith('[PM-TEXT]')) && !task.completed) {
-            incompleteTasks.push(task);
+          if (task.label.startsWith('[PM]') || task.label.startsWith('[PM-TEXT]')) {
+            allPmTasks.push(task);
           }
         }
       }
 
+      const incompleteCount = allPmTasks.filter(t => !t.completed).length;
+
       // Skip if no incomplete tasks
-      if (incompleteTasks.length === 0) {
+      if (incompleteCount === 0) {
         results.push({ project: propertyName, status: 'skipped', reason: 'No incomplete tasks' });
         continue;
       }
@@ -173,10 +189,10 @@ export default async function handler(req, res) {
 
       // Send the reminder email
       try {
-        const html = generateReminderEmail(project, incompleteTasks, propertyName, firstName);
+        const html = generateReminderEmail(project, allPmTasks, incompleteCount, propertyName, firstName);
         await sendEmail(
           recipientEmail,
-          `Reminder: ${incompleteTasks.length} item${incompleteTasks.length !== 1 ? 's' : ''} remaining for ${propertyName}`,
+          `Reminder: ${incompleteCount} item${incompleteCount !== 1 ? 's' : ''} remaining for ${propertyName}`,
           html
         );
 
@@ -186,7 +202,7 @@ export default async function handler(req, res) {
           .update({ last_reminder_sent: now.toISOString() })
           .eq('id', project.id);
 
-        results.push({ project: propertyName, status: 'sent', to: recipientEmail, tasks: incompleteTasks.length });
+        results.push({ project: propertyName, status: 'sent', to: recipientEmail, tasks: incompleteCount });
       } catch (emailError) {
         results.push({ project: propertyName, status: 'error', error: emailError.message });
       }

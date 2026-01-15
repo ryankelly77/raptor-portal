@@ -38,7 +38,7 @@ async function sendEmail(to, subject, html) {
 }
 
 function generateReminderEmail(project, allTasks, incompleteCount, propertyName, firstName) {
-  const projectUrl = `${PORTAL_URL}/${project.public_token}`;
+  const projectUrl = `${PORTAL_URL}/project/${project.public_token}`;
   const logoUrl = `${PORTAL_URL}/logo-light.png`;
   const greeting = firstName ? `Hello ${firstName},` : 'Hello,';
 

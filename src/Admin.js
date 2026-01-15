@@ -5,6 +5,7 @@ import {
   supabase,
   fetchAllForAdmin,
   fetchProjectDetails,
+  fetchActivityLog,
   createPropertyManager,
   updatePropertyManager,
   createProperty,
@@ -146,6 +147,12 @@ export default function Admin() {
           >
             Docs
           </button>
+          <button
+            className={activeTab === 'activity' ? 'active' : ''}
+            onClick={() => setActiveTab('activity')}
+          >
+            Activity
+          </button>
         </nav>
         <Link to="/" className="admin-home-link">← Back</Link>
       </header>
@@ -201,6 +208,10 @@ export default function Admin() {
             documents={data.globalDocuments}
             onRefresh={loadData}
           />
+        )}
+
+        {activeTab === 'activity' && (
+          <ActivityLog projects={data.projects} locations={data.locations} properties={data.properties} />
         )}
       </main>
 
@@ -2380,6 +2391,104 @@ function ManagerForm({ initialData, onSave, onCancel }) {
         </button>
       </div>
     </>
+  );
+}
+
+// ============================================
+// ACTIVITY LOG
+// ============================================
+function ActivityLog({ projects, locations, properties }) {
+  const [activities, setActivities] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filterProject, setFilterProject] = useState('');
+
+  useEffect(() => {
+    loadActivities();
+  }, [filterProject]);
+
+  async function loadActivities() {
+    setLoading(true);
+    try {
+      const data = await fetchActivityLog(filterProject || null);
+      setActivities(data);
+    } catch (err) {
+      console.error('Error loading activities:', err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  }
+
+  function getProjectInfo(activity) {
+    if (activity.project?.project_number) {
+      const propertyName = activity.project?.location?.property?.name || '';
+      return `#${activity.project.project_number}${propertyName ? ` - ${propertyName}` : ''}`;
+    }
+    return 'Unknown Project';
+  }
+
+  return (
+    <div className="activity-log-section">
+      <div className="section-header">
+        <h2>Activity Log</h2>
+        <select
+          value={filterProject}
+          onChange={(e) => setFilterProject(e.target.value)}
+          className="activity-filter"
+        >
+          <option value="">All Projects</option>
+          {projects.map(p => {
+            const location = locations.find(l => l.id === p.location_id);
+            const property = location ? properties.find(pr => pr.id === location.property_id) : null;
+            return (
+              <option key={p.id} value={p.id}>
+                #{p.project_number} - {property?.name || 'Unknown'}
+              </option>
+            );
+          })}
+        </select>
+      </div>
+
+      {loading ? (
+        <div className="loading">Loading activity...</div>
+      ) : activities.length === 0 ? (
+        <div className="empty-state">No activity recorded yet.</div>
+      ) : (
+        <div className="activity-list">
+          {activities.map(activity => (
+            <div key={activity.id} className="activity-item">
+              <div className="activity-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </div>
+              <div className="activity-content">
+                <div className="activity-description">
+                  <strong>{activity.actor_type === 'admin' ? 'Admin' : 'Property Manager'}</strong>
+                  {' completed: '}
+                  <span className="activity-task">{activity.description}</span>
+                </div>
+                <div className="activity-meta">
+                  <span className="activity-project">{getProjectInfo(activity)}</span>
+                  <span className="activity-time">{formatDate(activity.created_at)}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -378,7 +378,7 @@ export async function createTask(data) {
   return result;
 }
 
-export async function updateTask(id, updates) {
+export async function updateTask(id, updates, options = {}) {
   const { data, error } = await supabase
     .from('tasks')
     .update(updates)
@@ -390,11 +390,11 @@ export async function updateTask(id, updates) {
   // Auto-update phase status based on task completion
   if (data && data.phase_id) {
     try {
-      // Get all tasks for this phase
-      const { data: phaseTasks } = await supabase
-        .from('tasks')
-        .select('completed')
-        .eq('phase_id', data.phase_id);
+      // Get all tasks for this phase and the phase info
+      const [{ data: phaseTasks }, { data: phase }] = await Promise.all([
+        supabase.from('tasks').select('completed').eq('phase_id', data.phase_id),
+        supabase.from('phases').select('project_id').eq('id', data.phase_id).single()
+      ]);
 
       if (phaseTasks && phaseTasks.length > 0) {
         const completedCount = phaseTasks.filter(t => t.completed).length;
@@ -413,12 +413,48 @@ export async function updateTask(id, updates) {
           .update({ status: newStatus })
           .eq('id', data.phase_id);
       }
+
+      // Log activity if task was just completed and not from admin
+      if (updates.completed === true && !options.skipLog && phase?.project_id) {
+        const taskLabel = data.label
+          .replace('[PM] ', '')
+          .replace('[PM-TEXT] ', '')
+          .replace('[PM-DATE] ', '');
+
+        await supabase.from('activity_log').insert({
+          project_id: phase.project_id,
+          task_id: id,
+          action: 'task_completed',
+          description: taskLabel,
+          actor_type: options.actorType || 'property_manager'
+        });
+      }
     } catch (statusErr) {
       console.error('Error auto-updating phase status:', statusErr);
     }
   }
 
   return data;
+}
+
+// Activity Log functions
+export async function fetchActivityLog(projectId = null) {
+  let query = supabase
+    .from('activity_log')
+    .select(`
+      *,
+      project:projects(project_number, location:locations(name, property:properties(name)))
+    `)
+    .order('created_at', { ascending: false })
+    .limit(100);
+
+  if (projectId) {
+    query = query.eq('project_id', projectId);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data || [];
 }
 
 export async function deleteTask(id) {

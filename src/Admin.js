@@ -1115,7 +1115,7 @@ function PhaseEditor({ phase, phaseNumber, project, onUpdatePhase, onUpdateTask,
                     <EquipmentQtyInputs task={task} onRefresh={onRefresh} />
                   )}
                   {isAdminDelivery && (
-                    <DeliveryInputs task={task} onRefresh={onRefresh} />
+                    <DeliveryInputs task={task} projectId={project.id} onRefresh={onRefresh} />
                   )}
                   {isAdminDoc && task.completed && (
                     <TaskDocUpload task={task} onRefresh={onRefresh} />
@@ -1283,12 +1283,12 @@ function EnclosureInputs({ task, onRefresh }) {
 // ============================================
 const EQUIPMENT_TYPES = ['SmartFridge', 'SmartCooker', 'Fixturelite', 'Mag Wrap'];
 
-function DeliveryInputs({ task, onRefresh }) {
+function DeliveryInputs({ task, projectId, onRefresh }) {
   const deliveries = task.deliveries || [];
   const [localDeliveries, setLocalDeliveries] = useState(deliveries);
 
   const addDelivery = async () => {
-    const newDeliveries = [...localDeliveries, { equipment: '', date: '', carrier: '', tracking: '' }];
+    const newDeliveries = [...localDeliveries, { equipment: '', date: '', carrier: '', tracking: '', notified: false }];
     setLocalDeliveries(newDeliveries);
     await updateTask(task.id, { deliveries: newDeliveries });
     onRefresh();
@@ -1301,6 +1301,31 @@ function DeliveryInputs({ task, onRefresh }) {
   };
 
   const saveDelivery = async (index) => {
+    const delivery = localDeliveries[index];
+
+    // Check if delivery has all required fields and hasn't been notified yet
+    if (delivery.equipment && delivery.date && delivery.tracking && !delivery.notified) {
+      try {
+        const response = await fetch('/api/send-delivery-notification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ projectId, delivery })
+        });
+
+        if (response.ok) {
+          // Mark as notified so we don't send duplicate emails
+          const newDeliveries = [...localDeliveries];
+          newDeliveries[index] = { ...newDeliveries[index], notified: true };
+          setLocalDeliveries(newDeliveries);
+          await updateTask(task.id, { deliveries: newDeliveries });
+          onRefresh();
+          return;
+        }
+      } catch (err) {
+        console.error('Failed to send delivery notification:', err);
+      }
+    }
+
     await updateTask(task.id, { deliveries: localDeliveries });
     onRefresh();
   };

@@ -951,12 +951,13 @@ function TimelinePhase({ phase, phaseNumber, locationImages = [], surveyToken, s
             </div>
           )}
 
-          {/* Show documents for Site Assessment phase */}
-          {phase.documents && phase.documents.length > 0 && (
+          {/* Show site images - prefer phase.documents, fall back to legacy locationImages */}
+          {((phase.documents && phase.documents.length > 0) || (locationImages && locationImages.length > 0)) && (
             <div className="phase-images">
-              <div className="phase-images-title">Site Images</div>
+              <div className="phase-images-title">Site Photos</div>
               <div className="phase-images-grid">
-                {phase.documents.map((doc, idx) => {
+                {/* Show phase documents first */}
+                {phase.documents && phase.documents.map((doc, idx) => {
                   const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(doc.url);
                   return isImage ? (
                     <div key={doc.id || idx} className="phase-image-thumb" onClick={() => setPreviewImage(doc.url)}>
@@ -972,16 +973,8 @@ function TimelinePhase({ phase, phaseNumber, locationImages = [], surveyToken, s
                     </a>
                   );
                 })}
-              </div>
-            </div>
-          )}
-
-          {/* Show legacy location images if present */}
-          {locationImages && locationImages.length > 0 && (
-            <div className="phase-images">
-              <div className="phase-images-title">Site Photos</div>
-              <div className="phase-images-grid">
-                {locationImages.map((img, idx) => (
+                {/* Show legacy location images only if no phase documents */}
+                {(!phase.documents || phase.documents.length === 0) && locationImages && locationImages.map((img, idx) => (
                   <div key={idx} className="phase-image-thumb" onClick={() => setPreviewImage(img)}>
                     <img src={img} alt={`Site ${idx + 1}`} />
                   </div>

@@ -742,8 +742,11 @@ body {
   border: none;
 }
 .btn-edit { background: var(--bg-light); color: var(--text-primary); border: 1px solid var(--border-color); }
-.btn-save { background: var(--raptor-orange); color: white; }
+.btn-save { background: var(--raptor-orange); color: white; transition: background 0.2s; }
+.btn-save:disabled { background: #ccc; cursor: not-allowed; }
+.btn-save:has(+ .saved), .btn-save[data-saved] { background: var(--success-green); }
 .btn-cancel { background: white; color: var(--text-secondary); border: 1px solid var(--border-color); }
+.btn-cancel:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-group { display: flex; gap: 8px; }
 .btn-small { padding: 4px 10px; font-size: 0.8em; background: var(--bg-light); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; }
 .btn-edit-small { font-size: 0.8em; color: var(--raptor-orange); background: none; border: none; cursor: pointer; padding: 5px; }

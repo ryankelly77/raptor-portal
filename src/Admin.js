@@ -308,15 +308,25 @@ function ProjectEditor({ project, details, locations, properties, managers, onBa
   });
   const [showPhaseModal, setShowPhaseModal] = useState(false);
   const [editingPhase, setEditingPhase] = useState(null);
+  const [savingProject, setSavingProject] = useState(false);
+  const [savedProject, setSavedProject] = useState(false);
 
   async function handleSaveProject() {
+    setSavingProject(true);
+    setSavedProject(false);
     try {
       await updateProject(project.id, projectForm);
-      setEditingProject(false);
+      setSavedProject(true);
+      setTimeout(() => {
+        setSavedProject(false);
+        setEditingProject(false);
+      }, 1000);
       onRefresh();
     } catch (err) {
       console.error('Error saving project:', err);
       alert('Error saving project');
+    } finally {
+      setSavingProject(false);
     }
   }
 
@@ -472,8 +482,10 @@ function ProjectEditor({ project, details, locations, properties, managers, onBa
             <button className="btn-edit" onClick={() => setEditingProject(true)}>Edit</button>
           ) : (
             <div className="btn-group">
-              <button className="btn-save" onClick={handleSaveProject}>Save</button>
-              <button className="btn-cancel" onClick={() => setEditingProject(false)}>Cancel</button>
+              <button className="btn-save" onClick={handleSaveProject} disabled={savingProject}>
+                {savingProject ? 'Saving...' : savedProject ? '✓ Saved' : 'Save'}
+              </button>
+              <button className="btn-cancel" onClick={() => setEditingProject(false)} disabled={savingProject}>Cancel</button>
             </div>
           )}
         </div>
@@ -625,6 +637,8 @@ function PhaseEditor({ phase, phaseNumber, project, onUpdatePhase, onUpdateTask,
   });
   const [newTaskLabel, setNewTaskLabel] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef(null);
   const multiFileInputRef = useRef(null);
@@ -633,7 +647,15 @@ function PhaseEditor({ phase, phaseNumber, project, onUpdatePhase, onUpdateTask,
   const documents = phase.documents || [];
 
   async function handleSave() {
-    await onUpdatePhase(phase.id, form);
+    setSaving(true);
+    setSaved(false);
+    try {
+      await onUpdatePhase(phase.id, form);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleFileUpload(e) {
@@ -831,7 +853,9 @@ function PhaseEditor({ phase, phaseNumber, project, onUpdatePhase, onUpdateTask,
               </div>
             )}
             <div className="form-actions">
-              <button className="btn-save" onClick={handleSave}>Save</button>
+              <button className="btn-save" onClick={handleSave} disabled={saving}>
+                {saving ? 'Saving...' : saved ? '✓ Saved' : 'Save'}
+              </button>
             </div>
           </div>
 

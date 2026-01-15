@@ -386,6 +386,38 @@ export async function updateTask(id, updates) {
     .select()
     .single();
   if (error) throw error;
+
+  // Auto-update phase status based on task completion
+  if (data && data.phase_id) {
+    try {
+      // Get all tasks for this phase
+      const { data: phaseTasks } = await supabase
+        .from('tasks')
+        .select('completed')
+        .eq('phase_id', data.phase_id);
+
+      if (phaseTasks && phaseTasks.length > 0) {
+        const completedCount = phaseTasks.filter(t => t.completed).length;
+        let newStatus;
+        if (completedCount === 0) {
+          newStatus = 'pending';
+        } else if (completedCount === phaseTasks.length) {
+          newStatus = 'completed';
+        } else {
+          newStatus = 'in-progress';
+        }
+
+        // Update phase status
+        await supabase
+          .from('phases')
+          .update({ status: newStatus })
+          .eq('id', data.phase_id);
+      }
+    } catch (statusErr) {
+      console.error('Error auto-updating phase status:', statusErr);
+    }
+  }
+
   return data;
 }
 

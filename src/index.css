@@ -310,16 +310,54 @@ body {
   justify-content: center;
   flex-shrink: 0;
   background: white;
+  transition: all 0.2s ease;
 }
-.pm-checkbox.checked { background: var(--success-green); border-color: var(--success-green); color: white; }
-.pm-action-label { font-weight: 600; color: var(--text-primary); }
+.pm-checkbox.checked {
+  background: var(--success-green);
+  border-color: var(--success-green);
+  color: white;
+  animation: checkboxPop 0.4s ease;
+}
+.pm-checkbox.checked svg {
+  animation: checkmarkDraw 0.3s ease 0.1s both;
+}
+.pm-action-label { font-weight: 600; color: var(--text-primary); transition: color 0.3s ease; }
 .pm-action-item.completed .pm-action-label { color: var(--success-green); }
+.pm-action-item.completed {
+  animation: itemComplete 0.5s ease;
+}
+
+/* Checkbox pop animation */
+@keyframes checkboxPop {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.3); }
+  50% { transform: scale(0.9); }
+  70% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+/* Checkmark draw animation */
+@keyframes checkmarkDraw {
+  0% { transform: scale(0) rotate(-45deg); opacity: 0; }
+  50% { transform: scale(1.2) rotate(0deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+/* Item complete celebration */
+@keyframes itemComplete {
+  0% { transform: scale(1); }
+  15% { transform: scale(1.02); }
+  30% { transform: scale(0.98); }
+  100% { transform: scale(1); }
+}
 
 /* Electrical PM Action Items */
 .pm-action-items { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
 .pm-action-item.electrical { border-color: #E65100; }
 .pm-action-item.electrical .pm-checkbox { border-color: #E65100; }
 .pm-action-item.electrical:hover { background: #FFF3E0; }
+.pm-action-item.electrical.completed { border-color: var(--success-green); }
+.pm-action-item.electrical.completed .pm-checkbox { border-color: var(--success-green); }
 .pm-action-item.electrical.disabled { opacity: 0.5; cursor: not-allowed; border-style: dotted; }
 .pm-action-item.electrical.disabled:hover { background: white; border-style: dotted; }
 
@@ -1227,6 +1265,12 @@ body {
 .pm-action-item.access {
   border-color: #E65100;
 }
+.pm-action-item.access.completed {
+  border-color: var(--success-green);
+}
+.pm-action-item.access.completed .pm-checkbox {
+  border-color: var(--success-green);
+}
 .pm-action-item.access.disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -1770,6 +1814,114 @@ body {
 }
 .task-doc-upload .btn-small {
   font-size: 0.85em;
+}
+
+/* PM Welcome Header */
+.pm-welcome-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--raptor-black);
+  color: white;
+  padding: 20px 24px;
+  margin: 0 auto 20px auto;
+  max-width: 900px;
+  border-radius: 12px;
+}
+
+.pm-welcome-header.completed {
+  background: linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%);
+}
+
+.pm-welcome-inner {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.pm-welcome-text {
+  flex: 1;
+}
+
+.pm-welcome-text p {
+  margin: 0;
+  font-size: 1em;
+  line-height: 1.6;
+  color: rgba(255,255,255,0.95);
+}
+
+.pm-welcome-text strong {
+  color: var(--raptor-orange);
+}
+
+.pm-welcome-check {
+  font-size: 1.6em;
+  flex-shrink: 0;
+}
+
+.pm-task-counter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.pm-task-circle {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: var(--raptor-orange);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 2px 8px rgba(255, 88, 15, 0.3);
+  animation: balloonPop 0.5s ease;
+}
+
+.pm-task-circle:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(255, 88, 15, 0.4);
+}
+
+@keyframes balloonPop {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.35); box-shadow: 0 6px 20px rgba(255, 88, 15, 0.5); }
+  50% { transform: scale(0.9); }
+  75% { transform: scale(1.1); }
+  100% { transform: scale(1); box-shadow: 0 2px 8px rgba(255, 88, 15, 0.3); }
+}
+
+.pm-task-circle .remaining {
+  font-size: 1.8em;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.pm-task-circle .total {
+  font-size: 0.75em;
+  opacity: 0.9;
+}
+
+/* Completed state celebration */
+.pm-welcome-header.completed .pm-welcome-check {
+  animation: celebrateCheck 0.6s ease;
+}
+
+@keyframes celebrateCheck {
+  0% { transform: scale(0) rotate(-180deg); }
+  50% { transform: scale(1.3) rotate(10deg); }
+  70% { transform: scale(0.9) rotate(-5deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+.pm-task-label {
+  font-size: 0.8em;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255,255,255,0.8);
+  line-height: 1.3;
 }
 
 /* COI Form */

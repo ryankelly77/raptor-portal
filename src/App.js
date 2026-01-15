@@ -1146,20 +1146,75 @@ function PoweredBy() {
 }
 
 // ============================================
+// PM WELCOME HEADER (sticky)
+// ============================================
+function PMWelcomeHeader({ project }) {
+  // Count all PM tasks across all phases
+  const allPmTasks = project.phases.flatMap(phase =>
+    (phase.tasks || []).filter(t => t.label.startsWith('[PM]') || t.label.startsWith('[PM-TEXT]'))
+  );
+
+  const totalPmTasks = allPmTasks.length;
+  const completedPmTasks = allPmTasks.filter(t => t.completed).length;
+  const remainingPmTasks = totalPmTasks - completedPmTasks;
+
+  // Get first name from property manager
+  const fullName = project.propertyManager?.name || 'Property Manager';
+  const firstName = fullName.split(' ')[0];
+
+  // If all tasks done, show completion message
+  if (remainingPmTasks === 0 && totalPmTasks > 0) {
+    return (
+      <div className="pm-welcome-header completed">
+        <div className="pm-welcome-inner">
+          <span className="pm-welcome-check">✓</span>
+          <div className="pm-welcome-text">
+            <p>
+              <strong>You're all set, {firstName}!</strong> You've completed all your tasks.
+              We'll take it from here—a great new amenity is on its way to your tenants.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="pm-welcome-header">
+      <div className="pm-welcome-inner">
+        <div className="pm-welcome-text">
+          <p>
+            <strong>Welcome, {firstName}!</strong> We're excited to bring Raptor infrastructure to your building.
+            Your part is simple: just {remainingPmTasks} of {totalPmTasks} items, marked below. Check them off as you go—we'll take care of everything else. A great new amenity is on its way to your tenants.
+          </p>
+        </div>
+        <div className="pm-task-counter">
+          <div className="pm-task-circle" key={remainingPmTasks}>
+            <span className="remaining">{remainingPmTasks}</span>
+            <span className="total">of {totalPmTasks}</span>
+          </div>
+          <span className="pm-task-label">items<br/>remaining</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================
 // PROJECT WIDGET (reusable for single & multi-project views)
 // ============================================
 function ProjectWidget({ project, showLogo = true, onRefresh }) {
   return (
     <div className="progress-widget">
-      <Header project={project} showLogo={showLogo} />
-      <OverallProgress
-        progress={project.overallProgress}
-        estimatedCompletion={project.estimatedCompletion}
-        daysRemaining={project.daysRemaining}
-      />
-      <Timeline phases={project.phases} locationImages={project.locationImages} surveyToken={project.surveyToken} surveyClicks={project.surveyClicks} surveyCompletions={project.surveyCompletions} onRefresh={onRefresh} globalDocuments={project.globalDocuments} />
-      <ContactFooter projectManager={project.projectManager} />
-    </div>
+        <Header project={project} showLogo={showLogo} />
+        <OverallProgress
+          progress={project.overallProgress}
+          estimatedCompletion={project.estimatedCompletion}
+          daysRemaining={project.daysRemaining}
+        />
+        <Timeline phases={project.phases} locationImages={project.locationImages} surveyToken={project.surveyToken} surveyClicks={project.surveyClicks} surveyCompletions={project.surveyCompletions} onRefresh={onRefresh} globalDocuments={project.globalDocuments} />
+        <ContactFooter projectManager={project.projectManager} />
+      </div>
   );
 }
 
@@ -1266,6 +1321,7 @@ function ProjectView() {
       {/* Main Content */}
       <main className="pm-main">
         <h1 className="pm-main-title">Installation Progress</h1>
+        <PMWelcomeHeader project={project} />
         <ProjectWidget project={project} showLogo={false} onRefresh={loadProject} />
       </main>
     </div>

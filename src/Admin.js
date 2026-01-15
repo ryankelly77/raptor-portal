@@ -899,7 +899,7 @@ function PhaseEditor({ phase, phaseNumber, project, onUpdatePhase, onUpdateTask,
           {/* Single Document Upload Section - hide for survey and site assessment phases */}
           {!phase.title.toLowerCase().includes('survey') && !isSiteAssessment && (
             <div className="document-section">
-              <h4>Document</h4>
+              <h4>{phase.title.toLowerCase().includes('building access') ? 'Additional Insured COI' : 'Document'}</h4>
               {phase.document_url ? (
                 <div className="document-attached">
                   <a href={phase.document_url} target="_blank" rel="noopener noreferrer" className="document-link-admin">

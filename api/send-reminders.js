@@ -13,10 +13,13 @@ const MAILGUN_DOMAIN = process.env.MAILGUN_DOMAIN || 'reminders.raptor-vending.c
 const FROM_EMAIL = process.env.FROM_EMAIL || 'Raptor Vending <noreply@reminders.raptor-vending.com>';
 const PORTAL_URL = process.env.PORTAL_URL || 'https://portal.raptor-vending.com';
 
+const CC_EMAILS = 'ryan@raptor-vending.com, tracie@raptor-vending.com, cristian@raptor-vending.com';
+
 async function sendEmail(to, subject, html) {
   const form = new URLSearchParams();
   form.append('from', FROM_EMAIL);
   form.append('to', to);
+  form.append('cc', CC_EMAILS);
   form.append('subject', subject);
   form.append('html', html);
 

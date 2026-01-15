@@ -45,15 +45,21 @@ function generateReminderEmail(project, allTasks, incompleteCount, propertyName,
   const taskList = allTasks.map(t => {
     const label = t.label.replace(/^\[(PM|PM-TEXT)\]\s*/, '');
     if (t.completed) {
-      return `<div style="margin-bottom: 10px; display: flex; align-items: flex-start;">
-        <span style="color: #4CAF50; font-size: 18px; margin-right: 10px; line-height: 1.2;">&#10003;</span>
-        <span style="color: #999; text-decoration: line-through;">${label}</span>
-      </div>`;
+      return `<tr>
+        <td style="width: 32px; padding: 8px 12px 8px 0; vertical-align: top;">
+          <div style="width: 24px; height: 24px; background: #4CAF50; border-radius: 4px; text-align: center; line-height: 24px;">
+            <span style="color: white; font-size: 16px; font-weight: bold;">&#10003;</span>
+          </div>
+        </td>
+        <td style="padding: 8px 0; vertical-align: middle; color: #999; text-decoration: line-through;">${label}</td>
+      </tr>`;
     } else {
-      return `<div style="margin-bottom: 10px; display: flex; align-items: flex-start;">
-        <span style="color: #FF6B00; font-size: 18px; margin-right: 10px; line-height: 1.2;">&#9675;</span>
-        <span>${label}</span>
-      </div>`;
+      return `<tr>
+        <td style="width: 32px; padding: 8px 12px 8px 0; vertical-align: top;">
+          <div style="width: 24px; height: 24px; border: 2px solid #FF6B00; border-radius: 4px; box-sizing: border-box;"></div>
+        </td>
+        <td style="padding: 8px 0; vertical-align: middle;">${label}</td>
+      </tr>`;
     }
   }).join('');
 
@@ -76,7 +82,9 @@ function generateReminderEmail(project, allTasks, incompleteCount, propertyName,
 
         <p style="font-size: 16px; margin-top: 24px;"><strong>Your progress:</strong></p>
         <div style="background: #f9f9f9; padding: 20px; border-radius: 4px; border-left: 4px solid #FF6B00; margin: 16px 0;">
-          ${taskList}
+          <table style="width: 100%; border-collapse: collapse;">
+            ${taskList}
+          </table>
         </div>
 
         <p style="text-align: center; margin: 30px 0;">

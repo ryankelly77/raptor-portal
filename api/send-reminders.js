@@ -94,6 +94,8 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Mailgun API key not configured' });
   }
 
+  const forceResend = req.body?.force === true;
+
   try {
     // Fetch projects with reminders enabled, including location/property/PM info
     const { data: projects, error: projectsError } = await supabase
@@ -140,8 +142,8 @@ export default async function handler(req, res) {
       const pmFullName = project.location?.property?.property_manager?.name || '';
       const firstName = pmFullName.split(' ')[0] || '';
 
-      // Skip if reminded in the last 24 hours
-      if (project.last_reminder_sent && new Date(project.last_reminder_sent) > oneDayAgo) {
+      // Skip if reminded in the last 24 hours (unless force flag is set)
+      if (!forceResend && project.last_reminder_sent && new Date(project.last_reminder_sent) > oneDayAgo) {
         results.push({ project: propertyName, status: 'skipped', reason: 'Recently reminded' });
         continue;
       }

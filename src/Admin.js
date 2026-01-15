@@ -958,41 +958,37 @@ function PhaseEditor({ phase, phaseNumber, project, onUpdatePhase, onUpdateTask,
               </div>
               {project.survey_token && (
                 <div style={{ display: 'flex', gap: '24px', marginTop: '12px', fontSize: '0.85em', color: '#666' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: '100px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span>Clicks:</span>
                     <strong>{project.survey_clicks || 0}</strong>
-                    {project.survey_clicks > 0 && (
-                      <button
-                        className="btn-delete-small"
-                        onClick={async () => {
-                          if (window.confirm('Reset click count to 0?')) {
-                            await updateProject(project.id, { survey_clicks: 0 });
-                            onRefresh();
-                          }
-                        }}
-                        title="Reset clicks"
-                      >
-                        ×
-                      </button>
-                    )}
+                    <button
+                      className="btn-link-small"
+                      onClick={async () => {
+                        if (window.confirm('Reset click count to 0?')) {
+                          await updateProject(project.id, { survey_clicks: 0 });
+                          onRefresh();
+                        }
+                      }}
+                      style={{ fontSize: '0.85em', color: '#999', marginLeft: '4px' }}
+                    >
+                      (reset)
+                    </button>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span>Completed:</span>
                     <strong>{project.survey_completions || 0}</strong>
-                    {project.survey_completions > 0 && (
-                      <button
-                        className="btn-delete-small"
-                        onClick={async () => {
-                          if (window.confirm('Reset completed count to 0?')) {
-                            await updateProject(project.id, { survey_completions: 0 });
-                            onRefresh();
-                          }
-                        }}
-                        title="Reset completions"
-                      >
-                        ×
-                      </button>
-                    )}
+                    <button
+                      className="btn-link-small"
+                      onClick={async () => {
+                        if (window.confirm('Reset completed count to 0?')) {
+                          await updateProject(project.id, { survey_completions: 0 });
+                          onRefresh();
+                        }
+                      }}
+                      style={{ fontSize: '0.85em', color: '#999', marginLeft: '4px' }}
+                    >
+                      (reset)
+                    </button>
                   </div>
                 </div>
               )}

@@ -748,6 +748,8 @@ body {
 .btn-small { padding: 4px 10px; font-size: 0.8em; background: var(--bg-light); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; }
 .btn-edit-small { font-size: 0.8em; color: var(--raptor-orange); background: none; border: none; cursor: pointer; padding: 5px; }
 .btn-delete-small { font-size: 0.9em; color: #e53935; background: none; border: none; cursor: pointer; padding: 2px 8px; }
+.btn-link-small { background: none; border: none; cursor: pointer; text-decoration: underline; }
+.btn-link-small:hover { color: #666; }
 .btn-add-small { padding: 6px 12px; font-size: 0.85em; background: var(--raptor-orange); color: white; border: none; border-radius: 4px; cursor: pointer; }
 
 /* Forms */

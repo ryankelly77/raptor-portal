@@ -61,12 +61,12 @@ function generateReminderEmail(project, incompleteTasks, propertyName, firstName
         <p style="font-size: 16px;">This is a friendly reminder that there are <strong>${incompleteTasks.length} item${incompleteTasks.length !== 1 ? 's' : ''}</strong> remaining for the vending installation at <strong>${propertyName}</strong>.</p>
 
         <p style="font-size: 16px; margin-top: 24px;"><strong>Remaining items:</strong></p>
-        <ul style="background: #f9f9f9; padding: 20px 20px 20px 40px; border-radius: 4px; border-left: 4px solid #4CAF50; margin: 16px 0;">
+        <ul style="background: #f9f9f9; padding: 20px 20px 20px 40px; border-radius: 4px; border-left: 4px solid #FF6B00; margin: 16px 0;">
           ${taskList}
         </ul>
 
         <p style="text-align: center; margin: 30px 0;">
-          <a href="${projectUrl}" style="background: #4CAF50; color: white; padding: 14px 36px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block; font-size: 16px;">Complete Your Items</a>
+          <a href="${projectUrl}" style="background: #FF6B00; color: white; padding: 14px 36px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block; font-size: 16px;">Complete Your Items</a>
         </p>
 
         <p style="color: #666; font-size: 14px; margin-top: 30px;">If you have any questions, please contact your Raptor Vending representative.</p>

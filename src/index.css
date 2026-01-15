@@ -1772,6 +1772,59 @@ body {
   font-size: 0.85em;
 }
 
+/* COI Form */
+.coi-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.coi-form-input {
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.95em;
+  transition: border-color 0.2s;
+}
+
+.coi-form-input:focus {
+  outline: none;
+  border-color: var(--raptor-orange);
+}
+
+.coi-form-input:disabled {
+  background: #f5f5f5;
+  color: #999;
+}
+
+.coi-form-row {
+  display: flex;
+  gap: 8px;
+}
+
+.coi-form-row .coi-city {
+  flex: 2;
+}
+
+.coi-form-row .coi-state {
+  flex: 1;
+  max-width: 80px;
+}
+
+.coi-form-row .coi-zip {
+  flex: 1;
+  max-width: 100px;
+}
+
+.pm-text-value {
+  font-size: 0.95em;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
 /* Admin Login */
 .admin-login {
   min-height: 100vh;

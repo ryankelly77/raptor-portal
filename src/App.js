@@ -643,6 +643,7 @@ function PropertyNotice({ contractorInfo, tasks = [], onRefresh, document, globa
 function BuildingAccessNotice({ tasks = [], onRefresh, globalDocuments }) {
   const [updating, setUpdating] = useState(null);
   const [textValues, setTextValues] = useState({});
+  const [coiForm, setCoiForm] = useState({ buildingName: '', careOf: '', street: '', city: '', state: '', zip: '' });
 
   // Filter to only PM-actionable tasks (including text input tasks)
   const pmTasks = tasks.filter(t => t.label.startsWith('[PM]') || t.label.startsWith('[PM-TEXT]'));
@@ -652,7 +653,18 @@ function BuildingAccessNotice({ tasks = [], onRefresh, globalDocuments }) {
     const initialValues = {};
     tasks.forEach(t => {
       if (t.label.startsWith('[PM-TEXT]')) {
-        initialValues[t.id] = t.pm_text_value || '';
+        // Try to parse JSON for COI form data
+        if (t.pm_text_value) {
+          try {
+            const parsed = JSON.parse(t.pm_text_value);
+            if (parsed.buildingName) {
+              setCoiForm(parsed);
+            }
+          } catch {
+            // Not JSON, use as plain text (legacy)
+            initialValues[t.id] = t.pm_text_value || '';
+          }
+        }
       }
     });
     setTextValues(initialValues);
@@ -663,6 +675,19 @@ function BuildingAccessNotice({ tasks = [], onRefresh, globalDocuments }) {
     setUpdating(task.id);
     try {
       await updateTask(task.id, { completed: true });
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      console.error('Error updating task:', err);
+    } finally {
+      setUpdating(null);
+    }
+  };
+
+  const handleCoiFormComplete = async (task) => {
+    if (!coiForm.buildingName.trim() || updating) return;
+    setUpdating(task.id);
+    try {
+      await updateTask(task.id, { completed: true, pm_text_value: JSON.stringify(coiForm) });
       if (onRefresh) onRefresh();
     } catch (err) {
       console.error('Error updating task:', err);
@@ -682,6 +707,22 @@ function BuildingAccessNotice({ tasks = [], onRefresh, globalDocuments }) {
       console.error('Error updating task:', err);
     } finally {
       setUpdating(null);
+    }
+  };
+
+  const formatCoiDisplay = (pmTextValue) => {
+    try {
+      const data = JSON.parse(pmTextValue);
+      const lines = [];
+      if (data.buildingName) lines.push(data.buildingName);
+      if (data.careOf) lines.push(`c/o ${data.careOf}`);
+      const addressParts = [data.street, data.city, data.state, data.zip].filter(Boolean);
+      if (addressParts.length > 0) {
+        lines.push(`${data.street || ''}, ${data.city || ''}, ${data.state || ''} ${data.zip || ''}`.replace(/^, |, $|, ,/g, ''));
+      }
+      return lines;
+    } catch {
+      return [pmTextValue];
     }
   };
 
@@ -717,8 +758,11 @@ function BuildingAccessNotice({ tasks = [], onRefresh, globalDocuments }) {
           const isDisabled = prevTask && !prevTask.completed;
           const isTextTask = task.label.startsWith('[PM-TEXT]');
 
-          // Text input task
+          // Text input task (COI form)
           if (isTextTask) {
+            const isCoiTask = task.label.toLowerCase().includes('coi') || task.label.toLowerCase().includes('insured');
+            const canSubmit = isCoiTask ? coiForm.buildingName.trim() : textValues[task.id]?.trim();
+
             return (
               <div
                 key={task.id}
@@ -726,7 +770,7 @@ function BuildingAccessNotice({ tasks = [], onRefresh, globalDocuments }) {
               >
                 <div
                   className={`pm-checkbox ${task.completed ? 'checked' : ''}`}
-                  onClick={() => !isDisabled && !task.completed && textValues[task.id]?.trim() && handleTextTaskComplete(task)}
+                  onClick={() => !isDisabled && !task.completed && canSubmit && (isCoiTask ? handleCoiFormComplete(task) : handleTextTaskComplete(task))}
                 >
                   {task.completed && (
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="14" height="14">
@@ -737,16 +781,75 @@ function BuildingAccessNotice({ tasks = [], onRefresh, globalDocuments }) {
                 <div className="pm-text-task-content">
                   <span className="pm-action-label">{getTaskLabel(task.label)}</span>
                   {!task.completed ? (
-                    <input
-                      type="text"
-                      className="pm-text-inline-input"
-                      placeholder="Enter name of insured exactly how you want it to appear on the COI"
-                      value={textValues[task.id] || ''}
-                      onChange={(e) => setTextValues({ ...textValues, [task.id]: e.target.value })}
-                      disabled={isDisabled}
-                    />
+                    isCoiTask ? (
+                      <div className="coi-form">
+                        <input
+                          type="text"
+                          className="coi-form-input"
+                          placeholder="Building name"
+                          value={coiForm.buildingName}
+                          onChange={(e) => setCoiForm({ ...coiForm, buildingName: e.target.value })}
+                          disabled={isDisabled}
+                        />
+                        <input
+                          type="text"
+                          className="coi-form-input"
+                          placeholder="c/o (building owner)"
+                          value={coiForm.careOf}
+                          onChange={(e) => setCoiForm({ ...coiForm, careOf: e.target.value })}
+                          disabled={isDisabled}
+                        />
+                        <input
+                          type="text"
+                          className="coi-form-input"
+                          placeholder="Street address"
+                          value={coiForm.street}
+                          onChange={(e) => setCoiForm({ ...coiForm, street: e.target.value })}
+                          disabled={isDisabled}
+                        />
+                        <div className="coi-form-row">
+                          <input
+                            type="text"
+                            className="coi-form-input coi-city"
+                            placeholder="City"
+                            value={coiForm.city}
+                            onChange={(e) => setCoiForm({ ...coiForm, city: e.target.value })}
+                            disabled={isDisabled}
+                          />
+                          <input
+                            type="text"
+                            className="coi-form-input coi-state"
+                            placeholder="State"
+                            value={coiForm.state}
+                            onChange={(e) => setCoiForm({ ...coiForm, state: e.target.value })}
+                            disabled={isDisabled}
+                          />
+                          <input
+                            type="text"
+                            className="coi-form-input coi-zip"
+                            placeholder="ZIP"
+                            value={coiForm.zip}
+                            onChange={(e) => setCoiForm({ ...coiForm, zip: e.target.value })}
+                            disabled={isDisabled}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <input
+                        type="text"
+                        className="pm-text-inline-input"
+                        placeholder="Enter value"
+                        value={textValues[task.id] || ''}
+                        onChange={(e) => setTextValues({ ...textValues, [task.id]: e.target.value })}
+                        disabled={isDisabled}
+                      />
+                    )
                   ) : (
-                    <span className="pm-text-value">{task.pm_text_value}</span>
+                    <div className="pm-text-value">
+                      {formatCoiDisplay(task.pm_text_value).map((line, i) => (
+                        <div key={i}>{line}</div>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>

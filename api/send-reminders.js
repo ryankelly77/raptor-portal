@@ -47,7 +47,7 @@ function generateReminderEmail(project, allTasks, incompleteCount, propertyName,
     if (t.completed) {
       return `<tr>
         <td style="width: 32px; padding: 8px 12px 8px 0; vertical-align: top;">
-          <div style="width: 24px; height: 24px; background: #4CAF50; border-radius: 4px; text-align: center; line-height: 24px;">
+          <div style="width: 24px; height: 24px; background: #FF6B00; border-radius: 4px; text-align: center; line-height: 24px;">
             <span style="color: white; font-size: 16px; font-weight: bold;">&#10003;</span>
           </div>
         </td>
@@ -141,10 +141,12 @@ export default async function handler(req, res) {
         ),
         phases (
           id,
+          phase_number,
           tasks (
             id,
             label,
-            completed
+            completed,
+            sort_order
           )
         )
       `)
@@ -170,10 +172,12 @@ export default async function handler(req, res) {
         continue;
       }
 
-      // Get all PM tasks
+      // Get all PM tasks in order (by phase_number, then sort_order)
+      const sortedPhases = (project.phases || []).sort((a, b) => a.phase_number - b.phase_number);
       const allPmTasks = [];
-      for (const phase of project.phases || []) {
-        for (const task of phase.tasks || []) {
+      for (const phase of sortedPhases) {
+        const sortedTasks = (phase.tasks || []).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+        for (const task of sortedTasks) {
           if (task.label.startsWith('[PM]') || task.label.startsWith('[PM-TEXT]')) {
             allPmTasks.push(task);
           }

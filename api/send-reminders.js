@@ -81,7 +81,7 @@ function generateReminderEmail(project, allTasks, incompleteCount, propertyName,
       <div style="background: #ffffff; padding: 30px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
         <p style="font-size: 16px;">${greeting}</p>
 
-        <p style="font-size: 16px;">This is a friendly reminder that there are <strong>${incompleteCount} item${incompleteCount !== 1 ? 's' : ''}</strong> remaining for the vending installation at <strong>${propertyName}</strong>.</p>
+        <p style="font-size: 16px;">This is a friendly reminder that there are <strong>${incompleteCount} item${incompleteCount !== 1 ? 's' : ''}</strong> remaining to get hot, gourmet food at <strong>${propertyName}</strong>.</p>
 
         <p style="font-size: 16px; margin-top: 24px;"><strong>Your progress:</strong></p>
         <div style="background: #f9f9f9; padding: 20px; border-radius: 4px; border-left: 4px solid #FF6B00; margin: 16px 0;">

@@ -1204,6 +1204,11 @@ function SpeedInputs({ task, onRefresh }) {
     }
   };
 
+  // Check if either speed is below 10 Mbps
+  const uploadBelowMin = upload && parseFloat(upload) < 10;
+  const downloadBelowMin = download && parseFloat(download) < 10;
+  const showWarning = (upload || download) && (uploadBelowMin || downloadBelowMin);
+
   return (
     <div className="admin-speed-inputs">
       <div className="speed-input-group">
@@ -1212,7 +1217,7 @@ function SpeedInputs({ task, onRefresh }) {
           type="number"
           step="0.1"
           min="0"
-          className="admin-speed-input"
+          className={`admin-speed-input ${uploadBelowMin ? 'below-min' : ''}`}
           placeholder="Mbps"
           value={upload}
           onChange={(e) => setUpload(e.target.value)}
@@ -1225,13 +1230,23 @@ function SpeedInputs({ task, onRefresh }) {
           type="number"
           step="0.1"
           min="0"
-          className="admin-speed-input"
+          className={`admin-speed-input ${downloadBelowMin ? 'below-min' : ''}`}
           placeholder="Mbps"
           value={download}
           onChange={(e) => setDownload(e.target.value)}
           onBlur={handleDownloadBlur}
         />
       </div>
+      {showWarning && (
+        <div className="admin-speed-warning">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <span>One or more of the speed tests did not meet the minimum requirements of 10Mbps. A network drop may be required.</span>
+        </div>
+      )}
     </div>
   );
 }

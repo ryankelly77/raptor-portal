@@ -293,7 +293,7 @@ function TaskItem({ task, globalDocuments, readOnly = false }) {
                   <line x1="12" y1="9" x2="12" y2="13"/>
                   <line x1="12" y1="17" x2="12.01" y2="17"/>
                 </svg>
-                <span>This location will require network drops due to a cellular signal less than the minimum speed required to run transactions without issues.</span>
+                <span>One or more of the speed tests did not meet the minimum requirements of 10Mbps. A network drop may be required.</span>
               </div>
             )}
           </div>

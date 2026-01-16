@@ -1771,6 +1771,7 @@ body {
 }
 .admin-speed-inputs {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   margin-left: auto;
   margin-right: 8px;
@@ -1795,6 +1796,30 @@ body {
 .admin-speed-input:focus {
   outline: none;
   border-color: var(--raptor-orange);
+}
+.admin-speed-input.below-min {
+  border-color: #dc3545;
+  background: #fff5f5;
+}
+.admin-speed-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 4px;
+  font-size: 0.75em;
+  color: #856404;
+}
+.admin-speed-warning svg {
+  flex-shrink: 0;
+  stroke: #856404;
+}
+.admin-speed-warning span {
+  line-height: 1.4;
 }
 .add-task-row { display: flex; gap: 10px; margin-top: 12px; }
 .add-task-row input { flex: 1; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 5px; }

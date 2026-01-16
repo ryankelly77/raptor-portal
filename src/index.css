@@ -2442,6 +2442,108 @@ body {
   font-size: 1.1em;
 }
 
+/* Preview Page Mobile Styles */
+@media (max-width: 768px) {
+  .preview-pane {
+    flex-direction: column;
+  }
+
+  .preview-sidebar {
+    width: 100%;
+    min-width: 100%;
+    height: auto;
+    max-height: 50vh;
+    border-bottom: 2px solid var(--raptor-orange);
+  }
+
+  .preview-sidebar-header {
+    padding: 15px;
+  }
+
+  .preview-logo {
+    height: 60px;
+  }
+
+  .preview-sidebar-nav {
+    padding: 10px 0;
+  }
+
+  .preview-sidebar-nav h3 {
+    padding: 0 15px 10px;
+    font-size: 0.7em;
+  }
+
+  .preview-property-group {
+    margin-top: 8px;
+  }
+
+  .preview-property-name {
+    padding: 6px 15px;
+    font-size: 0.75em;
+  }
+
+  .preview-project-btn {
+    padding: 10px 15px;
+  }
+
+  .preview-location {
+    font-size: 0.85em;
+  }
+
+  .preview-project-number {
+    font-size: 0.75em;
+  }
+
+  .preview-content {
+    flex: 1;
+    min-height: 50vh;
+  }
+
+  .admin-preview-view {
+    padding: 15px;
+  }
+
+  .admin-preview-view .pm-main {
+    font-size: 1em;
+  }
+}
+
+@media (max-width: 480px) {
+  .preview-sidebar {
+    max-height: 40vh;
+  }
+
+  .preview-logo {
+    height: 50px;
+  }
+
+  .preview-sidebar-header {
+    padding: 10px;
+  }
+
+  .preview-sidebar-nav h3 {
+    font-size: 0.65em;
+    padding: 0 12px 8px;
+  }
+
+  .preview-property-name {
+    padding: 5px 12px;
+    font-size: 0.7em;
+  }
+
+  .preview-project-btn {
+    padding: 8px 12px;
+  }
+
+  .preview-location {
+    font-size: 0.8em;
+  }
+
+  .admin-preview-view {
+    padding: 10px;
+  }
+}
+
 /* Email Templates */
 .email-templates-section {
   background: white;

@@ -1938,7 +1938,7 @@ function PublicPreview() {
       <SendToPhoneModal
         isOpen={showSendToPhone}
         onClose={() => setShowSendToPhone(false)}
-        url={selectedToken ? `${window.location.origin}/project/${selectedToken}` : window.location.href}
+        url={`${window.location.origin}/preview`}
       />
     </div>
   );

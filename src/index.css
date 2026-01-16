@@ -852,16 +852,16 @@ body {
     left: 0;
     right: 0;
     background: white;
-    padding: 10px 12px;
+    padding: 12px 15px;
     align-items: center;
     justify-content: space-between;
     z-index: 100;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    gap: 10px;
+    gap: 12px;
   }
 
   .pm-mobile-logo {
-    height: 36px;
+    height: 44px;
     width: auto;
     flex-shrink: 0;
   }
@@ -870,41 +870,41 @@ body {
     flex: 1;
     display: flex;
     align-items: center;
-    gap: 8px;
-    max-width: 150px;
+    gap: 10px;
+    max-width: 180px;
   }
 
   .pm-mobile-progress-bar {
     flex: 1;
-    height: 6px;
+    height: 8px;
     background: #e0e0e0;
-    border-radius: 3px;
+    border-radius: 4px;
     overflow: hidden;
   }
 
   .pm-mobile-progress-fill {
     height: 100%;
     background: var(--raptor-orange);
-    border-radius: 3px;
+    border-radius: 4px;
     transition: width 0.3s;
   }
 
   .pm-mobile-progress-text {
-    font-size: 0.75em;
-    font-weight: 600;
-    color: var(--text-secondary);
-    min-width: 32px;
+    font-size: 0.95em;
+    font-weight: 700;
+    color: var(--text-primary);
+    min-width: 36px;
   }
 
   .pm-mobile-greeting {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
     background: var(--bg-light);
     border: none;
-    padding: 6px 10px;
-    border-radius: 16px;
-    font-size: 0.85em;
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 1em;
     font-weight: 600;
     color: var(--raptor-orange);
     cursor: pointer;
@@ -925,12 +925,12 @@ body {
 
   .pm-mobile-message {
     position: fixed;
-    top: 52px;
+    top: 68px;
     left: 0;
     right: 0;
     background: var(--raptor-orange);
     color: white;
-    padding: 12px 15px;
+    padding: 14px 15px;
     z-index: 99;
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     cursor: pointer;
@@ -938,7 +938,7 @@ body {
 
   .pm-mobile-message p {
     margin: 0;
-    font-size: 0.85em;
+    font-size: 0.9em;
     line-height: 1.5;
   }
 
@@ -949,7 +949,7 @@ body {
 
   /* Adjust main content padding for header and bottom bar */
   .pm-main {
-    padding: 65px 15px 80px 15px;
+    padding: 80px 15px 90px 15px;
     margin-left: 0;
   }
 
@@ -997,19 +997,9 @@ body {
   }
 
   .pm-mobile-tasks-label {
-    color: rgba(255,255,255,0.7);
-    font-size: 0.8em;
-    font-weight: 500;
-  }
-
-  .pm-mobile-tasks-text {
     color: white;
-    font-size: 0.95em;
-  }
-
-  .pm-mobile-tasks-text strong {
-    color: var(--raptor-orange);
-    font-size: 1.1em;
+    font-size: 0.9em;
+    font-weight: 500;
   }
 
   .pm-mobile-property {

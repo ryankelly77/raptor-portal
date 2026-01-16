@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, useParams, Link } from 'react-router-dom';
+import { Routes, Route, useParams, Link, useSearchParams } from 'react-router-dom';
 import { fetchProjectByToken, fetchProjectsByPMToken, recordSurveyClick, updateTask } from './supabaseClient';
 import Admin from './Admin';
 import './App.css';
@@ -136,7 +136,7 @@ function OverallProgress({ progress, estimatedCompletion, daysRemaining }) {
   );
 }
 
-function TaskItem({ task, globalDocuments }) {
+function TaskItem({ task, globalDocuments, readOnly = false }) {
   // Hide ADMIN-DOC tasks until document is uploaded
   if (task.label.startsWith('[ADMIN-DOC]') && !task.document_url) {
     return null;
@@ -236,9 +236,19 @@ function TaskItem({ task, globalDocuments }) {
       <div className="subtask-content">
         <span className="subtask-label">
           {isCOITask && hasDocData ? (
-            <a href={task.document_url} target="_blank" rel="noopener noreferrer" className="coi-download-link">
-              {displayLabel}
-            </a>
+            readOnly ? (
+              <span
+                className="coi-download-link"
+                style={{ cursor: 'pointer' }}
+                onClick={() => alert('Only Property Managers or Raptor Vending can access these documents.')}
+              >
+                {displayLabel}
+              </span>
+            ) : (
+              <a href={task.document_url} target="_blank" rel="noopener noreferrer" className="coi-download-link">
+                {displayLabel}
+              </a>
+            )
           ) : (
             displayLabel
           )}
@@ -249,9 +259,19 @@ function TaskItem({ task, globalDocuments }) {
             <span className="speed-pending"> — Pending</span>
           )}
           {hasDocData && !isCOITask && (
-            <a href={task.document_url} target="_blank" rel="noopener noreferrer" className="task-doc-link">
-              (View Document)
-            </a>
+            readOnly ? (
+              <span
+                className="task-doc-link"
+                style={{ cursor: 'pointer' }}
+                onClick={() => alert('Only Property Managers or Raptor Vending can access these documents.')}
+              >
+                (View Document)
+              </span>
+            ) : (
+              <a href={task.document_url} target="_blank" rel="noopener noreferrer" className="task-doc-link">
+                (View Document)
+              </a>
+            )
           )}
         </span>
         {hasSpeedData && (
@@ -360,7 +380,7 @@ function EnclosureInfoBox({ enclosureLabel, isCustomColor }) {
   );
 }
 
-function SurveyCallToAction({ surveyToken, surveyClicks, surveyCompletions, pmTask, onTaskUpdate }) {
+function SurveyCallToAction({ surveyToken, surveyClicks, surveyCompletions, pmTask, onTaskUpdate, readOnly = false }) {
   const [copied, setCopied] = useState(false);
   const [updating, setUpdating] = useState(false);
   const baseUrl = window.location.origin;
@@ -378,7 +398,12 @@ function SurveyCallToAction({ surveyToken, surveyClicks, surveyCompletions, pmTa
     }
   };
 
+  const showReadOnlyMessage = () => {
+    alert('Only Property Managers or Raptor Vending can complete tasks.');
+  };
+
   const handleTaskToggle = async () => {
+    if (readOnly) { showReadOnlyMessage(); return; }
     if (!pmTask || updating || pmTask.completed) return; // Don't allow unchecking
     setUpdating(true);
     try {
@@ -404,8 +429,8 @@ function SurveyCallToAction({ surveyToken, surveyClicks, surveyCompletions, pmTa
       <div className="survey-cta-content">
         <p>Copy this link and share with building tenants to capture their snack and meal preferences:</p>
         <div className="survey-url-field">
-          <input type="text" value={surveyUrl} readOnly />
-          <button className="copy-btn" onClick={handleCopy} title="Copy to clipboard">
+          <input type="text" value={readOnly ? '(hidden)' : surveyUrl} readOnly style={readOnly ? { color: '#999', fontStyle: 'italic' } : {}} />
+          <button className="copy-btn" onClick={readOnly ? undefined : handleCopy} title="Copy to clipboard" disabled={readOnly} style={readOnly ? { opacity: 0.5, cursor: 'not-allowed' } : {}}>
             {copied ? (
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
                 <polyline points="20 6 9 17 4 12"></polyline>
@@ -482,7 +507,7 @@ function SurveyResults({ results }) {
   );
 }
 
-function PropertyNotice({ contractorInfo, tasks = [], onRefresh, document, globalDocuments }) {
+function PropertyNotice({ contractorInfo, tasks = [], onRefresh, document, globalDocuments, readOnly = false }) {
   // Use global electrical specs if available, otherwise fall back to phase document
   const specsDoc = globalDocuments?.electrical_specs?.url
     ? globalDocuments.electrical_specs
@@ -494,7 +519,12 @@ function PropertyNotice({ contractorInfo, tasks = [], onRefresh, document, globa
   // Filter to only PM-actionable tasks, keeping original sort order
   const pmActionTasks = tasks.filter(t => t.label.startsWith('[PM]') || t.label.startsWith('[PM-DATE]') || t.label.startsWith('[PM-TEXT]'));
 
+  const showReadOnlyMessage = () => {
+    alert('Only Property Managers or Raptor Vending can complete tasks.');
+  };
+
   const handleTaskToggle = async (task) => {
+    if (readOnly) { showReadOnlyMessage(); return; }
     if (updating || task.completed) return;
     setUpdating(task.id);
     try {
@@ -545,14 +575,29 @@ function PropertyNotice({ contractorInfo, tasks = [], onRefresh, document, globa
       <p>Property is responsible for infrastructure preparation—dedicated 15A circuit for Smart Cooker™ and <strong>optional</strong> ethernet drops for real-time operations. We provide specifications; property team coordinates contractor quotes and installation.</p>
 
       {specsDoc?.url && (
-        <a href={specsDoc.url} target="_blank" rel="noopener noreferrer" className="spec-sheet-btn">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
-          Download the Electrical and Networking Specifications
-        </a>
+        readOnly ? (
+          <span
+            className="spec-sheet-btn"
+            style={{ cursor: 'pointer' }}
+            onClick={() => alert('Only Property Managers or Raptor Vending can access these documents.')}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Download the Electrical and Networking Specifications
+          </span>
+        ) : (
+          <a href={specsDoc.url} target="_blank" rel="noopener noreferrer" className="spec-sheet-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Download the Electrical and Networking Specifications
+          </a>
+        )
       )}
 
       {/* PM Action Items - rendered in database sort order */}
@@ -561,6 +606,7 @@ function PropertyNotice({ contractorInfo, tasks = [], onRefresh, document, globa
           // Each task depends on the previous PM task being completed
           const prevTask = idx > 0 ? pmActionTasks[idx - 1] : null;
           const isDisabled = prevTask && !prevTask.completed;
+          const isClickable = !readOnly && !isDisabled;
           const isDateTask = task.label.startsWith('[PM-DATE]');
 
           // Date task that needs date picker
@@ -579,7 +625,7 @@ function PropertyNotice({ contractorInfo, tasks = [], onRefresh, document, globa
                     <button
                       className="pm-date-confirm"
                       onClick={() => handleDateTaskComplete(task)}
-                      disabled={!selectedDate || updating}
+                      disabled={isDisabled || !selectedDate || updating}
                     >
                       Confirm
                     </button>
@@ -598,7 +644,7 @@ function PropertyNotice({ contractorInfo, tasks = [], onRefresh, document, globa
               <div
                 key={task.id}
                 className={`pm-action-item electrical ${isDisabled ? 'disabled' : ''}`}
-                onClick={() => !isDisabled && setShowDatePicker(task.id)}
+                onClick={() => isClickable && setShowDatePicker(task.id)}
               >
                 <div className="pm-checkbox"></div>
                 <span className="pm-action-label">{getPromptForTask(task)}</span>
@@ -611,7 +657,7 @@ function PropertyNotice({ contractorInfo, tasks = [], onRefresh, document, globa
             <div
               key={task.id}
               className={`pm-action-item electrical ${task.completed ? 'completed' : ''} ${isDisabled ? 'disabled' : ''}`}
-              onClick={() => !isDisabled && !task.completed && handleTaskToggle(task)}
+              onClick={() => isClickable && !task.completed && handleTaskToggle(task)}
             >
               <div className={`pm-checkbox ${task.completed ? 'checked' : ''}`}>
                 {task.completed && (
@@ -640,7 +686,7 @@ function PropertyNotice({ contractorInfo, tasks = [], onRefresh, document, globa
   );
 }
 
-function BuildingAccessNotice({ tasks = [], onRefresh, globalDocuments }) {
+function BuildingAccessNotice({ tasks = [], onRefresh, globalDocuments, readOnly = false }) {
   const [updating, setUpdating] = useState(null);
   const [textValues, setTextValues] = useState({});
   const [coiForm, setCoiForm] = useState({ buildingName: '', careOf: '', street: '', city: '', state: '', zip: '' });
@@ -670,7 +716,12 @@ function BuildingAccessNotice({ tasks = [], onRefresh, globalDocuments }) {
     setTextValues(initialValues);
   }, [tasks]);
 
+  const showReadOnlyMessage = () => {
+    alert('Only Property Managers or Raptor Vending can complete tasks.');
+  };
+
   const handleTaskToggle = async (task) => {
+    if (readOnly) { showReadOnlyMessage(); return; }
     if (updating || task.completed) return;
     setUpdating(task.id);
     try {
@@ -684,6 +735,7 @@ function BuildingAccessNotice({ tasks = [], onRefresh, globalDocuments }) {
   };
 
   const handleCoiFormComplete = async (task) => {
+    if (readOnly) { showReadOnlyMessage(); return; }
     if (!coiForm.buildingName.trim() || updating) return;
     setUpdating(task.id);
     try {
@@ -697,6 +749,7 @@ function BuildingAccessNotice({ tasks = [], onRefresh, globalDocuments }) {
   };
 
   const handleTextTaskComplete = async (task) => {
+    if (readOnly) { showReadOnlyMessage(); return; }
     const textValue = textValues[task.id];
     if (!textValue || !textValue.trim() || updating) return;
     setUpdating(task.id);
@@ -756,6 +809,7 @@ function BuildingAccessNotice({ tasks = [], onRefresh, globalDocuments }) {
         {pmTasks.map((task, idx) => {
           const prevTask = idx > 0 ? pmTasks[idx - 1] : null;
           const isDisabled = prevTask && !prevTask.completed;
+          const isClickable = !readOnly && !isDisabled;
           const isTextTask = task.label.startsWith('[PM-TEXT]');
 
           // Text input task (COI form)
@@ -770,7 +824,12 @@ function BuildingAccessNotice({ tasks = [], onRefresh, globalDocuments }) {
               >
                 <div
                   className={`pm-checkbox ${task.completed ? 'checked' : ''}`}
-                  onClick={() => !isDisabled && !task.completed && canSubmit && (isCoiTask ? handleCoiFormComplete(task) : handleTextTaskComplete(task))}
+                  onClick={() => {
+                    if (readOnly) { showReadOnlyMessage(); return; }
+                    if (isClickable && !task.completed && canSubmit) {
+                      isCoiTask ? handleCoiFormComplete(task) : handleTextTaskComplete(task);
+                    }
+                  }}
                 >
                   {task.completed && (
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="14" height="14">
@@ -861,7 +920,10 @@ function BuildingAccessNotice({ tasks = [], onRefresh, globalDocuments }) {
             <div
               key={task.id}
               className={`pm-action-item access ${task.completed ? 'completed' : ''} ${isDisabled ? 'disabled' : ''}`}
-              onClick={() => !isDisabled && !task.completed && handleTaskToggle(task)}
+              onClick={() => {
+                if (readOnly) { showReadOnlyMessage(); return; }
+                if (isClickable && !task.completed) handleTaskToggle(task);
+              }}
             >
               <div className={`pm-checkbox ${task.completed ? 'checked' : ''}`}>
                 {task.completed && (
@@ -881,7 +943,7 @@ function BuildingAccessNotice({ tasks = [], onRefresh, globalDocuments }) {
   );
 }
 
-function TimelinePhase({ phase, phaseNumber, locationImages = [], surveyToken, surveyClicks, surveyCompletions, onRefresh, globalDocuments }) {
+function TimelinePhase({ phase, phaseNumber, locationImages = [], surveyToken, surveyClicks, surveyCompletions, onRefresh, globalDocuments, readOnly = false }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [previewImage, setPreviewImage] = useState(null);
 
@@ -938,16 +1000,33 @@ function TimelinePhase({ phase, phaseNumber, locationImages = [], surveyToken, s
           {/* Show document link if attached (but not for property responsibility phases - shown in PropertyNotice) */}
           {phase.document && !phase.propertyResponsibility && (
             <div className="phase-document">
-              <a href={phase.document.url} target="_blank" rel="noopener noreferrer" className="document-link">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                  <polyline points="14 2 14 8 20 8"/>
-                  <line x1="16" y1="13" x2="8" y2="13"/>
-                  <line x1="16" y1="17" x2="8" y2="17"/>
-                  <polyline points="10 9 9 9 8 9"/>
-                </svg>
-                {phase.document.label}
-              </a>
+              {readOnly ? (
+                <span
+                  className="document-link"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => alert('Only Property Managers or Raptor Vending can access these documents.')}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10 9 9 9 8 9"/>
+                  </svg>
+                  {phase.document.label}
+                </span>
+              ) : (
+                <a href={phase.document.url} target="_blank" rel="noopener noreferrer" className="document-link">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10 9 9 9 8 9"/>
+                  </svg>
+                  {phase.document.label}
+                </a>
+              )}
             </div>
           )}
 
@@ -1001,16 +1080,17 @@ function TimelinePhase({ phase, phaseNumber, locationImages = [], surveyToken, s
               surveyCompletions={surveyCompletions}
               pmTask={phase.tasks.find(t => t.label.startsWith('[PM]'))}
               onTaskUpdate={onRefresh}
+              readOnly={readOnly}
             />
           )}
 
           {phase.propertyResponsibility && (
-            <PropertyNotice contractorInfo={phase.contractorInfo} tasks={phase.tasks} onRefresh={onRefresh} document={phase.document} globalDocuments={globalDocuments} />
+            <PropertyNotice contractorInfo={phase.contractorInfo} tasks={phase.tasks} onRefresh={onRefresh} document={phase.document} globalDocuments={globalDocuments} readOnly={readOnly} />
           )}
 
           {/* Building Access & Coordination phase PM tasks */}
           {phase.title.toLowerCase().includes('building access') && (
-            <BuildingAccessNotice tasks={phase.tasks} onRefresh={onRefresh} globalDocuments={globalDocuments} />
+            <BuildingAccessNotice tasks={phase.tasks} onRefresh={onRefresh} globalDocuments={globalDocuments} readOnly={readOnly} />
           )}
 
           {phase.surveyResults && (
@@ -1023,7 +1103,7 @@ function TimelinePhase({ phase, phaseNumber, locationImages = [], surveyToken, s
                phase.status === 'in-progress' ? 'Task Progress' : 'Upcoming Tasks'}
             </div>
             {phase.tasks.map((task, idx) => (
-              <TaskItem key={idx} task={task} globalDocuments={globalDocuments} />
+              <TaskItem key={idx} task={task} globalDocuments={globalDocuments} readOnly={readOnly} />
             ))}
           </div>
         </div>
@@ -1039,7 +1119,7 @@ function TimelinePhase({ phase, phaseNumber, locationImages = [], surveyToken, s
   );
 }
 
-function Timeline({ phases, locationImages, surveyToken, surveyClicks, surveyCompletions, onRefresh, globalDocuments }) {
+function Timeline({ phases, locationImages, surveyToken, surveyClicks, surveyCompletions, onRefresh, globalDocuments, readOnly = false }) {
   return (
     <div className="timeline-section">
       <h2 className="section-title">Installation Timeline</h2>
@@ -1055,6 +1135,7 @@ function Timeline({ phases, locationImages, surveyToken, surveyClicks, surveyCom
             surveyCompletions={surveyCompletions}
             onRefresh={onRefresh}
             globalDocuments={globalDocuments}
+            readOnly={readOnly}
           />
         ))}
       </div>
@@ -1196,7 +1277,7 @@ function PMWelcomeHeader({ project }) {
 // ============================================
 // PROJECT WIDGET (reusable for single & multi-project views)
 // ============================================
-function ProjectWidget({ project, showLogo = true, onRefresh }) {
+function ProjectWidget({ project, showLogo = true, onRefresh, readOnly = false }) {
   return (
     <div className="progress-widget">
         <Header project={project} showLogo={showLogo} />
@@ -1205,7 +1286,7 @@ function ProjectWidget({ project, showLogo = true, onRefresh }) {
           estimatedCompletion={project.estimatedCompletion}
           daysRemaining={project.daysRemaining}
         />
-        <Timeline phases={project.phases} locationImages={project.locationImages} surveyToken={project.surveyToken} surveyClicks={project.surveyClicks} surveyCompletions={project.surveyCompletions} onRefresh={onRefresh} globalDocuments={project.globalDocuments} />
+        <Timeline phases={project.phases} locationImages={project.locationImages} surveyToken={project.surveyToken} surveyClicks={project.surveyClicks} surveyCompletions={project.surveyCompletions} onRefresh={onRefresh} globalDocuments={project.globalDocuments} readOnly={readOnly} />
         <ContactFooter projectManager={project.projectManager} />
       </div>
   );
@@ -1216,6 +1297,8 @@ function ProjectWidget({ project, showLogo = true, onRefresh }) {
 // ============================================
 function ProjectView() {
   const { token } = useParams();
+  const [searchParams] = useSearchParams();
+  const isAdminPreview = searchParams.get('admin') === '1';
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -1252,6 +1335,18 @@ function ProjectView() {
           <h2>Project Not Found</h2>
           <p>{error}</p>
         </div>
+      </div>
+    );
+  }
+
+  // Admin preview mode - simplified view without sidebar
+  if (isAdminPreview) {
+    return (
+      <div className="admin-preview-view">
+        <main className="pm-main" style={{ marginLeft: 0 }}>
+          <h1 className="pm-main-title">Installation Progress</h1>
+          <ProjectWidget project={project} showLogo={false} onRefresh={loadProject} readOnly={true} />
+        </main>
       </div>
     );
   }
@@ -1443,6 +1538,113 @@ function SurveyRedirect() {
 }
 
 // ============================================
+// PAGE: Public Preview (shareable)
+// ============================================
+function PublicPreview() {
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedToken, setSelectedToken] = useState(null);
+
+  useEffect(() => {
+    async function loadProjects() {
+      try {
+        const { supabase } = await import('./supabaseClient');
+        const { data } = await supabase
+          .from('projects')
+          .select(`
+            id,
+            public_token,
+            project_number,
+            is_active,
+            location:locations (
+              id,
+              name,
+              property:properties (
+                id,
+                name
+              )
+            )
+          `)
+          .eq('is_active', true)
+          .order('created_at', { ascending: false });
+
+        // Group by property
+        const grouped = {};
+        (data || []).forEach(project => {
+          const propertyName = project.location?.property?.name || 'Unknown Property';
+          if (!grouped[propertyName]) grouped[propertyName] = [];
+          grouped[propertyName].push({
+            ...project,
+            locationName: project.location?.name || 'Unknown Location',
+            propertyName
+          });
+        });
+
+        setProjects(grouped);
+
+        // Default to first project
+        const sortedProps = Object.keys(grouped).sort();
+        if (sortedProps.length > 0 && grouped[sortedProps[0]].length > 0) {
+          setSelectedToken(grouped[sortedProps[0]][0].public_token);
+        }
+      } catch (err) {
+        console.error('Error loading projects:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadProjects();
+  }, []);
+
+  if (loading) {
+    return <div className="loading">Loading...</div>;
+  }
+
+  const sortedProperties = Object.keys(projects).sort();
+
+  return (
+    <div className="preview-pane public-preview">
+      <div className="preview-sidebar">
+        <div className="preview-sidebar-header">
+          <img src="/logo-light.png" alt="Raptor Vending" className="preview-logo" />
+        </div>
+        <nav className="preview-sidebar-nav">
+          <h3>Properties</h3>
+          {sortedProperties.map(propertyName => (
+            <div key={propertyName} className="preview-property-group">
+              <div className="preview-property-name">{propertyName}</div>
+              {projects[propertyName].map(project => (
+                <button
+                  key={project.id}
+                  className={`preview-project-btn ${selectedToken === project.public_token ? 'active' : ''}`}
+                  onClick={() => setSelectedToken(project.public_token)}
+                >
+                  <span className="preview-location">{project.locationName}</span>
+                  <span className="preview-project-number">{project.project_number}</span>
+                </button>
+              ))}
+            </div>
+          ))}
+        </nav>
+      </div>
+      <div className="preview-content">
+        {selectedToken ? (
+          <iframe
+            src={`/project/${selectedToken}?admin=1`}
+            title="Project Preview"
+            className="preview-iframe"
+          />
+        ) : (
+          <div className="preview-placeholder">
+            <p>No projects available</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================
 // PAGE: Home / Landing
 // ============================================
 function Home() {
@@ -1479,6 +1681,7 @@ function App() {
       <Route path="/pm/:token" element={<PMPortal />} />
       <Route path="/survey/:token" element={<SurveyRedirect />} />
       <Route path="/admin" element={<Admin />} />
+      <Route path="/preview" element={<PublicPreview />} />
     </Routes>
   );
 }

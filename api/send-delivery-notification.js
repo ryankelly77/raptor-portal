@@ -11,13 +11,30 @@ const MAILGUN_API_KEY = process.env.MAILGUN_API_KEY;
 const MAILGUN_DOMAIN = process.env.MAILGUN_DOMAIN || 'reminders.raptor-vending.com';
 const FROM_EMAIL = process.env.FROM_EMAIL || 'Raptor Vending <noreply@reminders.raptor-vending.com>';
 const PORTAL_URL = process.env.PORTAL_URL || 'https://portal.raptor-vending.com';
-const CC_EMAILS = 'ryan@raptor-vending.com, tracie@raptor-vending.com, cristian@raptor-vending.com';
 
-async function sendEmail(to, subject, html) {
+// Default CC emails (used if database template not available)
+const DEFAULT_CC_EMAILS = 'ryan@raptor-vending.com, tracie@raptor-vending.com, cristian@raptor-vending.com';
+
+async function getEmailTemplate(templateKey) {
+  const { data, error } = await supabase
+    .from('email_templates')
+    .select('*')
+    .eq('template_key', templateKey)
+    .single();
+
+  if (error && error.code !== 'PGRST116') {
+    console.error('Error fetching email template:', error);
+  }
+  return data;
+}
+
+async function sendEmail(to, subject, html, ccEmails) {
   const form = new URLSearchParams();
   form.append('from', FROM_EMAIL);
   form.append('to', to);
-  form.append('cc', CC_EMAILS);
+  if (ccEmails) {
+    form.append('cc', ccEmails);
+  }
   form.append('subject', subject);
   form.append('html', html);
 
@@ -132,6 +149,10 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Fetch the email template for CC emails
+    const template = await getEmailTemplate('delivery-notification');
+    const ccEmails = template?.cc_emails || DEFAULT_CC_EMAILS;
+
     // Fetch project with location/property/PM info
     const { data: project, error: projectError } = await supabase
       .from('projects')
@@ -174,7 +195,8 @@ export default async function handler(req, res) {
     await sendEmail(
       recipientEmail,
       `Equipment on the way to ${propertyName} - ${delivery.equipment}`,
-      html
+      html,
+      ccEmails
     );
 
     return res.status(200).json({

@@ -25,7 +25,9 @@ import {
   updateEquipment,
   deleteEquipment,
   deleteProject,
-  updateGlobalDocument
+  updateGlobalDocument,
+  fetchEmailTemplates,
+  updateEmailTemplate
 } from './supabaseClient';
 
 // ============================================
@@ -2819,8 +2821,6 @@ function GlobalDocsManager({ documents = [], onRefresh }) {
 // PREVIEW PANE (Admin view of PM pages)
 // ============================================
 function PreviewPane({ projects, locations, properties }) {
-  const [selectedToken, setSelectedToken] = useState(null);
-
   // Group projects by property
   const projectsByProperty = {};
   projects.forEach(project => {
@@ -2841,30 +2841,39 @@ function PreviewPane({ projects, locations, properties }) {
   // Sort properties alphabetically
   const sortedProperties = Object.keys(projectsByProperty).sort();
 
+  // Get the first project's token as default
+  const firstProject = sortedProperties.length > 0 ? projectsByProperty[sortedProperties[0]][0] : null;
+  const [selectedToken, setSelectedToken] = useState(firstProject?.public_token || null);
+
   return (
     <div className="preview-pane">
       <div className="preview-sidebar">
-        <h3>All Projects</h3>
-        {sortedProperties.map(propertyName => (
-          <div key={propertyName} className="preview-property-group">
-            <div className="preview-property-name">{propertyName}</div>
-            {projectsByProperty[propertyName].map(project => (
-              <button
-                key={project.id}
-                className={`preview-project-btn ${selectedToken === project.public_token ? 'active' : ''}`}
-                onClick={() => setSelectedToken(project.public_token)}
-              >
-                <span className="preview-location">{project.locationName}</span>
-                <span className="preview-project-number">{project.project_number}</span>
-              </button>
-            ))}
-          </div>
-        ))}
+        <div className="preview-sidebar-header">
+          <img src="/logo-light.png" alt="Raptor Vending" className="preview-logo" />
+        </div>
+        <nav className="preview-sidebar-nav">
+          <h3>Properties</h3>
+          {sortedProperties.map(propertyName => (
+            <div key={propertyName} className="preview-property-group">
+              <div className="preview-property-name">{propertyName}</div>
+              {projectsByProperty[propertyName].map(project => (
+                <button
+                  key={project.id}
+                  className={`preview-project-btn ${selectedToken === project.public_token ? 'active' : ''}`}
+                  onClick={() => setSelectedToken(project.public_token)}
+                >
+                  <span className="preview-location">{project.locationName}</span>
+                  <span className="preview-project-number">{project.project_number}</span>
+                </button>
+              ))}
+            </div>
+          ))}
+        </nav>
       </div>
       <div className="preview-content">
         {selectedToken ? (
           <iframe
-            src={`/project/${selectedToken}`}
+            src={`/project/${selectedToken}?admin=1`}
             title="Project Preview"
             className="preview-iframe"
           />
@@ -2882,54 +2891,65 @@ function PreviewPane({ projects, locations, properties }) {
 // EMAIL TEMPLATES
 // ============================================
 function EmailTemplates() {
+  const [templates, setTemplates] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [expandedTemplate, setExpandedTemplate] = useState(null);
+  const [editingTemplate, setEditingTemplate] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [saving, setSaving] = useState(false);
 
-  const templates = [
-    {
-      id: 'weekly-reminder',
-      name: 'Weekly Reminder',
-      trigger: 'Every Monday at 9:00 AM Central',
-      triggerDetails: 'Automatically sent to projects with "Email Reminders" enabled. Skips projects where all PM tasks are completed.',
-      recipients: 'Property Manager (or reminder email override)',
-      cc: 'ryan@raptor-vending.com, tracie@raptor-vending.com, cristian@raptor-vending.com',
-      subject: 'Reminder: [X] items remaining for [Property Name]',
-      content: `Hello [First Name],
+  useEffect(() => {
+    loadTemplates();
+  }, []);
 
-This is a friendly reminder that there are [X] items we need your help with in order to get hot, gourmet food into [Property Name].
-
-Your progress:
-[List of all PM tasks with checkboxes - completed items checked, incomplete items unchecked]
-
-[Complete Your Items Button]
-
-If you have any questions, please contact your Raptor Vending representative.`
-    },
-    {
-      id: 'delivery-notification',
-      name: 'Delivery Notification',
-      trigger: 'When admin adds a delivery with equipment, date, and tracking number',
-      triggerDetails: 'Sent immediately when a delivery entry is saved with all required fields (equipment type, delivery date, tracking number). Each delivery only triggers one email.',
-      recipients: 'Property Manager (or reminder email override)',
-      cc: 'ryan@raptor-vending.com, tracie@raptor-vending.com, cristian@raptor-vending.com',
-      subject: 'Equipment on the way to [Property Name] - [Equipment Type]',
-      content: `Hello [First Name],
-
-Equipment is on the way!
-
-Great news! Equipment for [Property Name] has shipped and is on its way.
-
-Equipment: [Equipment Type]
-Delivery Date: [Formatted Date]
-Carrier: [Carrier Name]
-Tracking Number: [Tracking Number]
-
-[View Installation Progress Button]
-
-Raptor Vending will be onsite to accept the delivery and ensure the items are satisfactory. We will need a secure area to store the equipment until the health inspection.
-
-If you have any questions, please contact your Raptor Vending representative.`
+  async function loadTemplates() {
+    try {
+      setLoading(true);
+      const data = await fetchEmailTemplates();
+      setTemplates(data);
+    } catch (err) {
+      console.error('Error loading email templates:', err);
+    } finally {
+      setLoading(false);
     }
-  ];
+  }
+
+  function handleEdit(template) {
+    setEditingTemplate(template.id);
+    setEditForm({
+      name: template.name,
+      trigger_description: template.trigger_description || '',
+      trigger_details: template.trigger_details || '',
+      recipients: template.recipients || '',
+      cc_emails: template.cc_emails || '',
+      subject_template: template.subject_template || '',
+      body_template: template.body_template || ''
+    });
+  }
+
+  function handleCancel() {
+    setEditingTemplate(null);
+    setEditForm({});
+  }
+
+  async function handleSave(templateId) {
+    setSaving(true);
+    try {
+      await updateEmailTemplate(templateId, editForm);
+      await loadTemplates();
+      setEditingTemplate(null);
+      setEditForm({});
+    } catch (err) {
+      console.error('Error saving template:', err);
+      alert('Error saving template: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) {
+    return <div className="loading">Loading email templates...</div>;
+  }
 
   return (
     <div className="email-templates-section">
@@ -2937,7 +2957,7 @@ If you have any questions, please contact your Raptor Vending representative.`
         <h2>Email Templates</h2>
       </div>
       <p className="email-templates-intro">
-        These email templates are sent automatically based on their triggers. To modify a template, contact your developer.
+        These email templates are sent automatically based on their triggers. Click "Edit" to modify a template.
       </p>
 
       <div className="email-templates-list">
@@ -2949,7 +2969,7 @@ If you have any questions, please contact your Raptor Vending representative.`
             >
               <div className="email-template-title">
                 <h3>{template.name}</h3>
-                <span className="email-template-trigger-badge">{template.trigger}</span>
+                <span className="email-template-trigger-badge">{template.trigger_description}</span>
               </div>
               <span className="email-template-expand">
                 {expandedTemplate === template.id ? '−' : '+'}
@@ -2958,29 +2978,104 @@ If you have any questions, please contact your Raptor Vending representative.`
 
             {expandedTemplate === template.id && (
               <div className="email-template-body">
-                <div className="email-template-meta">
-                  <div className="email-template-meta-item">
-                    <strong>Trigger:</strong>
-                    <span>{template.triggerDetails}</span>
+                {editingTemplate === template.id ? (
+                  <div className="email-template-edit-form">
+                    <div className="form-group">
+                      <label>Template Name</label>
+                      <input
+                        type="text"
+                        value={editForm.name}
+                        onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Trigger Description (shown in header)</label>
+                      <input
+                        type="text"
+                        value={editForm.trigger_description}
+                        onChange={e => setEditForm({ ...editForm, trigger_description: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Trigger Details</label>
+                      <textarea
+                        rows="2"
+                        value={editForm.trigger_details}
+                        onChange={e => setEditForm({ ...editForm, trigger_details: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Recipients</label>
+                      <input
+                        type="text"
+                        value={editForm.recipients}
+                        onChange={e => setEditForm({ ...editForm, recipients: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>CC Emails</label>
+                      <input
+                        type="text"
+                        value={editForm.cc_emails}
+                        onChange={e => setEditForm({ ...editForm, cc_emails: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Subject Template</label>
+                      <input
+                        type="text"
+                        value={editForm.subject_template}
+                        onChange={e => setEditForm({ ...editForm, subject_template: e.target.value })}
+                        placeholder="Use {{propertyName}}, {{itemCount}}, {{equipment}} etc."
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Body Template</label>
+                      <textarea
+                        rows="12"
+                        value={editForm.body_template}
+                        onChange={e => setEditForm({ ...editForm, body_template: e.target.value })}
+                        placeholder="Use {{firstName}}, {{propertyName}}, {{taskList}}, {{projectUrl}} etc."
+                      />
+                    </div>
+                    <div className="form-actions">
+                      <button className="btn-secondary" onClick={handleCancel} disabled={saving}>Cancel</button>
+                      <button className="btn-primary" onClick={() => handleSave(template.id)} disabled={saving}>
+                        {saving ? 'Saving...' : 'Save Changes'}
+                      </button>
+                    </div>
                   </div>
-                  <div className="email-template-meta-item">
-                    <strong>To:</strong>
-                    <span>{template.recipients}</span>
-                  </div>
-                  <div className="email-template-meta-item">
-                    <strong>CC:</strong>
-                    <span>{template.cc}</span>
-                  </div>
-                  <div className="email-template-meta-item">
-                    <strong>Subject:</strong>
-                    <span>{template.subject}</span>
-                  </div>
-                </div>
+                ) : (
+                  <>
+                    <div className="email-template-meta">
+                      <div className="email-template-meta-item">
+                        <strong>Trigger:</strong>
+                        <span>{template.trigger_details}</span>
+                      </div>
+                      <div className="email-template-meta-item">
+                        <strong>To:</strong>
+                        <span>{template.recipients}</span>
+                      </div>
+                      <div className="email-template-meta-item">
+                        <strong>CC:</strong>
+                        <span>{template.cc_emails}</span>
+                      </div>
+                      <div className="email-template-meta-item">
+                        <strong>Subject:</strong>
+                        <span>{template.subject_template}</span>
+                      </div>
+                    </div>
 
-                <div className="email-template-content">
-                  <strong>Content:</strong>
-                  <pre>{template.content}</pre>
-                </div>
+                    <div className="email-template-content">
+                      <strong>Content:</strong>
+                      <pre>{template.body_template}</pre>
+                    </div>
+
+                    <div className="email-template-actions">
+                      <button className="btn-secondary" onClick={() => handleEdit(template)}>Edit Template</button>
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </div>

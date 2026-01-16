@@ -608,6 +608,39 @@ export async function updateGlobalDocument(id, updates) {
 }
 
 // ============================================
+// EMAIL TEMPLATES
+// ============================================
+export async function fetchEmailTemplates() {
+  const { data, error } = await supabase
+    .from('email_templates')
+    .select('*')
+    .order('name');
+  if (error) throw error;
+  return data || [];
+}
+
+export async function fetchEmailTemplateByKey(key) {
+  const { data, error } = await supabase
+    .from('email_templates')
+    .select('*')
+    .eq('template_key', key)
+    .single();
+  if (error && error.code !== 'PGRST116') throw error;
+  return data;
+}
+
+export async function updateEmailTemplate(id, updates) {
+  const { data, error } = await supabase
+    .from('email_templates')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// ============================================
 // HELPER FUNCTIONS
 // ============================================
 function formatDate(dateString) {

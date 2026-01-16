@@ -161,6 +161,12 @@ export default function Admin() {
           >
             Preview
           </button>
+          <button
+            className={activeTab === 'emails' ? 'active' : ''}
+            onClick={() => setActiveTab('emails')}
+          >
+            Email Templates
+          </button>
         </nav>
         <Link to="/" className="admin-home-link">← Back</Link>
       </header>
@@ -224,6 +230,10 @@ export default function Admin() {
 
         {activeTab === 'preview' && (
           <PreviewPane projects={data.projects} locations={data.locations} properties={data.properties} />
+        )}
+
+        {activeTab === 'emails' && (
+          <EmailTemplates />
         )}
       </main>
 
@@ -2863,6 +2873,118 @@ function PreviewPane({ projects, locations, properties }) {
             <p>Select a project from the sidebar to preview</p>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================
+// EMAIL TEMPLATES
+// ============================================
+function EmailTemplates() {
+  const [expandedTemplate, setExpandedTemplate] = useState(null);
+
+  const templates = [
+    {
+      id: 'weekly-reminder',
+      name: 'Weekly Reminder',
+      trigger: 'Every Monday at 9:00 AM Central',
+      triggerDetails: 'Automatically sent to projects with "Email Reminders" enabled. Skips projects where all PM tasks are completed.',
+      recipients: 'Property Manager (or reminder email override)',
+      cc: 'ryan@raptor-vending.com, tracie@raptor-vending.com, cristian@raptor-vending.com',
+      subject: 'Reminder: [X] items remaining for [Property Name]',
+      content: `Hello [First Name],
+
+This is a friendly reminder that there are [X] items we need your help with in order to get hot, gourmet food into [Property Name].
+
+Your progress:
+[List of all PM tasks with checkboxes - completed items checked, incomplete items unchecked]
+
+[Complete Your Items Button]
+
+If you have any questions, please contact your Raptor Vending representative.`
+    },
+    {
+      id: 'delivery-notification',
+      name: 'Delivery Notification',
+      trigger: 'When admin adds a delivery with equipment, date, and tracking number',
+      triggerDetails: 'Sent immediately when a delivery entry is saved with all required fields (equipment type, delivery date, tracking number). Each delivery only triggers one email.',
+      recipients: 'Property Manager (or reminder email override)',
+      cc: 'ryan@raptor-vending.com, tracie@raptor-vending.com, cristian@raptor-vending.com',
+      subject: 'Equipment on the way to [Property Name] - [Equipment Type]',
+      content: `Hello [First Name],
+
+Equipment is on the way!
+
+Great news! Equipment for [Property Name] has shipped and is on its way.
+
+Equipment: [Equipment Type]
+Delivery Date: [Formatted Date]
+Carrier: [Carrier Name]
+Tracking Number: [Tracking Number]
+
+[View Installation Progress Button]
+
+Raptor Vending will be onsite to accept the delivery and ensure the items are satisfactory. We will need a secure area to store the equipment until the health inspection.
+
+If you have any questions, please contact your Raptor Vending representative.`
+    }
+  ];
+
+  return (
+    <div className="email-templates-section">
+      <div className="section-header">
+        <h2>Email Templates</h2>
+      </div>
+      <p className="email-templates-intro">
+        These email templates are sent automatically based on their triggers. To modify a template, contact your developer.
+      </p>
+
+      <div className="email-templates-list">
+        {templates.map(template => (
+          <div key={template.id} className="email-template-card">
+            <div
+              className="email-template-header"
+              onClick={() => setExpandedTemplate(expandedTemplate === template.id ? null : template.id)}
+            >
+              <div className="email-template-title">
+                <h3>{template.name}</h3>
+                <span className="email-template-trigger-badge">{template.trigger}</span>
+              </div>
+              <span className="email-template-expand">
+                {expandedTemplate === template.id ? '−' : '+'}
+              </span>
+            </div>
+
+            {expandedTemplate === template.id && (
+              <div className="email-template-body">
+                <div className="email-template-meta">
+                  <div className="email-template-meta-item">
+                    <strong>Trigger:</strong>
+                    <span>{template.triggerDetails}</span>
+                  </div>
+                  <div className="email-template-meta-item">
+                    <strong>To:</strong>
+                    <span>{template.recipients}</span>
+                  </div>
+                  <div className="email-template-meta-item">
+                    <strong>CC:</strong>
+                    <span>{template.cc}</span>
+                  </div>
+                  <div className="email-template-meta-item">
+                    <strong>Subject:</strong>
+                    <span>{template.subject}</span>
+                  </div>
+                </div>
+
+                <div className="email-template-content">
+                  <strong>Content:</strong>
+                  <pre>{template.content}</pre>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

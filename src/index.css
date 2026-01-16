@@ -2400,6 +2400,125 @@ body {
   font-size: 1.1em;
 }
 
+/* Email Templates */
+.email-templates-section {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.email-templates-intro {
+  color: var(--text-secondary);
+  margin-bottom: 25px;
+}
+
+.email-templates-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.email-template-card {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.email-template-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 20px;
+  background: var(--bg-light);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.email-template-header:hover {
+  background: #f0f0f0;
+}
+
+.email-template-title {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.email-template-title h3 {
+  margin: 0;
+  font-size: 1.1em;
+  color: var(--text-primary);
+}
+
+.email-template-trigger-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  background: #E3F2FD;
+  color: #1565C0;
+  border-radius: 4px;
+  font-size: 0.8em;
+  font-weight: 500;
+}
+
+.email-template-expand {
+  font-size: 1.5em;
+  color: var(--text-muted);
+  font-weight: 300;
+}
+
+.email-template-body {
+  padding: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.email-template-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.email-template-meta-item {
+  display: flex;
+  gap: 10px;
+}
+
+.email-template-meta-item strong {
+  min-width: 80px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.email-template-meta-item span {
+  color: var(--text-primary);
+}
+
+.email-template-content {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.email-template-content strong {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text-secondary);
+}
+
+.email-template-content pre {
+  background: #f9f9f9;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 15px;
+  margin: 0;
+  white-space: pre-wrap;
+  font-family: inherit;
+  font-size: 0.95em;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
 @media (max-width: 768px) {
   .admin-header { flex-wrap: wrap; gap: 15px; }
   .admin-nav { order: 3; width: 100%; overflow-x: auto; }

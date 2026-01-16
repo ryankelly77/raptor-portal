@@ -1230,9 +1230,8 @@ function SendToPhoneModal({ isOpen, onClose, url }) {
       <div className="send-phone-modal" onClick={(e) => e.stopPropagation()}>
         <button className="send-phone-close" onClick={onClose}>×</button>
         <div className="send-phone-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="32" height="32">
-            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
-            <line x1="12" y1="18" x2="12.01" y2="18"/>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="32" height="32">
+            <path d="M12 18h.01M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
           </svg>
         </div>
         <h3>View on Your Phone</h3>
@@ -1299,6 +1298,79 @@ function PMWelcomeHeader({ project }) {
           <span className="pm-task-label">items<br/>remaining</span>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ============================================
+// PM MOBILE BOTTOM BAR
+// ============================================
+function PMMobileBottomBar({ project, projects = [], onSelectProject, selectedToken }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const hasMultipleProjects = projects.length > 1;
+
+  // Calculate remaining PM tasks
+  const getPmTasksRemaining = (proj) => {
+    const allPmTasks = proj.phases?.flatMap(phase =>
+      (phase.tasks || []).filter(t => t.label.startsWith('[PM]') || t.label.startsWith('[PM-TEXT]'))
+    ) || [];
+    return allPmTasks.filter(t => !t.completed).length;
+  };
+
+  const remainingTasks = getPmTasksRemaining(project);
+  const propertyName = project.propertyName || 'Property';
+
+  const handleSelect = (token) => {
+    if (onSelectProject) onSelectProject(token);
+    setMenuOpen(false);
+  };
+
+  return (
+    <div className="pm-mobile-bar">
+      {/* Items Remaining */}
+      <div className="pm-mobile-tasks">
+        <div className={`pm-mobile-tasks-count ${remainingTasks === 0 ? 'complete' : ''}`}>
+          {remainingTasks === 0 ? (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="16" height="16">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          ) : (
+            remainingTasks
+          )}
+        </div>
+        <span className="pm-mobile-tasks-label">{remainingTasks === 0 ? 'Done' : 'To Do'}</span>
+      </div>
+
+      {/* Property Name / Selector */}
+      <button
+        className={`pm-mobile-property ${hasMultipleProjects ? 'has-menu' : ''}`}
+        onClick={() => hasMultipleProjects && setMenuOpen(!menuOpen)}
+      >
+        <span className="pm-mobile-property-name">{propertyName}</span>
+        {hasMultipleProjects && (
+          <svg className={`pm-mobile-caret ${menuOpen ? 'open' : ''}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        )}
+      </button>
+
+      {/* Property Menu */}
+      {menuOpen && hasMultipleProjects && (
+        <div className="pm-mobile-menu">
+          {projects.map(proj => (
+            <button
+              key={proj.publicToken}
+              className={`pm-mobile-menu-item ${selectedToken === proj.publicToken ? 'active' : ''}`}
+              onClick={() => handleSelect(proj.publicToken)}
+            >
+              <span className="pm-mobile-menu-name">{proj.propertyName}</span>
+              <span className="pm-mobile-menu-tasks">
+                {getPmTasksRemaining(proj)} items
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -1416,9 +1488,8 @@ function ProjectView() {
 
         <div className="pm-sidebar-send-phone">
           <button className="send-phone-btn" onClick={() => setShowSendToPhone(true)}>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
-              <line x1="12" y1="18" x2="12.01" y2="18"/>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
+              <path d="M12 18h.01M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
             </svg>
             Send to Phone
           </button>
@@ -1428,6 +1499,9 @@ function ProjectView() {
           <PoweredBy />
         </div>
       </aside>
+
+      {/* Mobile Bottom Bar */}
+      <PMMobileBottomBar project={project} />
 
       {/* Main Content */}
       <main className="pm-main">
@@ -1530,9 +1604,8 @@ function PMPortal() {
 
         <div className="pm-sidebar-send-phone">
           <button className="send-phone-btn" onClick={() => setShowSendToPhone(true)}>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
-              <line x1="12" y1="18" x2="12.01" y2="18"/>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
+              <path d="M12 18h.01M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
             </svg>
             Send to Phone
           </button>
@@ -1542,6 +1615,17 @@ function PMPortal() {
           <PoweredBy />
         </div>
       </aside>
+
+      {/* Mobile Bottom Bar */}
+      <PMMobileBottomBar
+        project={data.projects[0]}
+        projects={data.projects}
+        selectedToken={data.projects[0]?.publicToken}
+        onSelectProject={(token) => {
+          const el = document.getElementById(`property-${data.projects.find(p => p.publicToken === token)?.propertyName}`);
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }}
+      />
 
       {/* Main Content */}
       <main className="pm-main">

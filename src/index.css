@@ -803,6 +803,11 @@ body {
 .no-projects h2 { color: var(--text-muted); margin-bottom: 10px; }
 .no-projects p { color: var(--text-secondary); }
 
+/* PM Mobile Bottom Bar - Hidden on desktop */
+.pm-mobile-bar {
+  display: none;
+}
+
 @media (max-width: 900px) {
   .pm-portal { flex-direction: column; }
   .pm-sidebar {
@@ -826,47 +831,147 @@ body {
 }
 
 @media (max-width: 600px) {
+  /* Hide sidebar completely on mobile, show bottom bar instead */
   .pm-sidebar {
-    padding: 15px;
+    display: none;
   }
 
-  .pm-sidebar-header { margin-bottom: 15px; padding: 5px 0; }
-  .pm-sidebar-header .logo-img { height: 60px !important; }
-
-  .pm-sidebar-info {
-    margin-bottom: 12px;
-    padding-bottom: 12px;
-    text-align: center;
-  }
-  .pm-sidebar-info h2 { font-size: 1.1em; }
-  .pm-sidebar-info p { font-size: 0.85em; }
-
-  .pm-sidebar-nav {
-    margin-bottom: 15px;
-    text-align: center;
-  }
-  .pm-sidebar-nav h3 { margin-bottom: 8px; }
-  .pm-nav-link {
-    display: inline-block;
-    padding: 8px 12px;
-    font-size: 0.9em;
+  /* Show mobile bottom bar */
+  .pm-mobile-bar {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--raptor-black);
+    padding: 12px 16px;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 100;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
   }
 
-  .pm-sidebar-survey {
-    padding: 14px;
-    margin-bottom: 12px;
+  .pm-mobile-tasks {
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
-  .pm-sidebar-survey h3 { font-size: 0.9em; }
-  .pm-sidebar-survey p { font-size: 0.8em; margin-bottom: 10px; }
-  .pm-survey-btn {
-    padding: 8px 14px;
+
+  .pm-mobile-tasks-count {
+    width: 32px;
+    height: 32px;
+    background: var(--raptor-orange);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 0.95em;
+  }
+
+  .pm-mobile-tasks-count.complete {
+    background: #2e7d32;
+  }
+
+  .pm-mobile-tasks-label {
+    color: rgba(255,255,255,0.7);
     font-size: 0.8em;
+    font-weight: 500;
   }
 
-  .pm-sidebar-footer { padding-top: 10px; text-align: center; }
-  .pm-sidebar-footer .powered-by { font-size: 0.75em; }
+  .pm-mobile-property {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 0.95em;
+    font-weight: 600;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: default;
+  }
 
-  .pm-main { padding: 15px; }
+  .pm-mobile-property.has-menu {
+    cursor: pointer;
+    background: rgba(255,255,255,0.1);
+  }
+
+  .pm-mobile-property.has-menu:hover {
+    background: rgba(255,255,255,0.15);
+  }
+
+  .pm-mobile-property-name {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .pm-mobile-caret {
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+
+  .pm-mobile-caret.open {
+    transform: rotate(180deg);
+  }
+
+  .pm-mobile-menu {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    background: var(--raptor-black);
+    border-top: 1px solid rgba(255,255,255,0.1);
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+
+  .pm-mobile-menu-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 14px 16px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    color: white;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .pm-mobile-menu-item:hover {
+    background: rgba(255,255,255,0.1);
+  }
+
+  .pm-mobile-menu-item.active {
+    background: var(--raptor-orange);
+  }
+
+  .pm-mobile-menu-name {
+    font-size: 0.95em;
+    font-weight: 500;
+  }
+
+  .pm-mobile-menu-tasks {
+    font-size: 0.8em;
+    color: rgba(255,255,255,0.6);
+  }
+
+  .pm-mobile-menu-item.active .pm-mobile-menu-tasks {
+    color: rgba(255,255,255,0.9);
+  }
+
+  /* Add bottom padding to main content for bottom bar */
+  .pm-main {
+    padding: 15px 15px 80px 15px;
+    margin-left: 0;
+  }
+
   .pm-main-title {
     font-size: 1.4em;
     margin-bottom: 15px;
@@ -964,6 +1069,60 @@ body {
   .contact-btn {
     padding: 10px 20px;
     font-size: 0.9em;
+  }
+
+  /* COI Form mobile */
+  .coi-form {
+    max-width: 100%;
+  }
+
+  .coi-form-input {
+    padding: 8px 10px;
+    font-size: 0.9em;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .coi-form-row {
+    flex-wrap: wrap;
+  }
+
+  .coi-form-row .coi-city {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .coi-form-row .coi-state {
+    flex: 1;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .coi-form-row .coi-zip {
+    flex: 1;
+    max-width: none;
+    min-width: 0;
+  }
+
+  /* Survey URL field mobile */
+  .survey-url-field {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .survey-url-field input {
+    font-size: 0.8em;
+    padding: 10px;
+  }
+
+  .survey-url-field .copy-btn {
+    align-self: flex-end;
+  }
+
+  /* PM text inline input */
+  .pm-text-inline-input {
+    width: 100%;
+    box-sizing: border-box;
   }
 }
 

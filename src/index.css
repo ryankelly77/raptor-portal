@@ -803,7 +803,11 @@ body {
 .no-projects h2 { color: var(--text-muted); margin-bottom: 10px; }
 .no-projects p { color: var(--text-secondary); }
 
-/* PM Mobile Bottom Bar - Hidden on desktop */
+/* PM Mobile Header & Bottom Bar - Hidden on desktop */
+.pm-mobile-header {
+  display: none;
+}
+
 .pm-mobile-bar {
   display: none;
 }
@@ -831,8 +835,126 @@ body {
 }
 
 @media (max-width: 600px) {
-  /* Hide sidebar completely on mobile, show bottom bar instead */
+  /* Hide sidebar and desktop welcome header on mobile */
   .pm-sidebar {
+    display: none;
+  }
+
+  .pm-welcome-header {
+    display: none;
+  }
+
+  /* Show mobile header - sticky at top */
+  .pm-mobile-header {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    padding: 10px 12px;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    gap: 10px;
+  }
+
+  .pm-mobile-logo {
+    height: 28px;
+    width: auto;
+    flex-shrink: 0;
+  }
+
+  .pm-mobile-progress {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 150px;
+  }
+
+  .pm-mobile-progress-bar {
+    flex: 1;
+    height: 6px;
+    background: #e0e0e0;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .pm-mobile-progress-fill {
+    height: 100%;
+    background: var(--raptor-orange);
+    border-radius: 3px;
+    transition: width 0.3s;
+  }
+
+  .pm-mobile-progress-text {
+    font-size: 0.75em;
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 32px;
+  }
+
+  .pm-mobile-greeting {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--bg-light);
+    border: none;
+    padding: 6px 10px;
+    border-radius: 16px;
+    font-size: 0.85em;
+    font-weight: 600;
+    color: var(--raptor-orange);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .pm-mobile-greeting:hover {
+    background: #e8e8e8;
+  }
+
+  .pm-mobile-greeting-icon {
+    transition: transform 0.2s;
+  }
+
+  .pm-mobile-greeting-icon.open {
+    transform: rotate(180deg);
+  }
+
+  .pm-mobile-message {
+    position: fixed;
+    top: 52px;
+    left: 0;
+    right: 0;
+    background: var(--raptor-orange);
+    color: white;
+    padding: 12px 15px;
+    z-index: 99;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    cursor: pointer;
+  }
+
+  .pm-mobile-message p {
+    margin: 0;
+    font-size: 0.85em;
+    line-height: 1.5;
+  }
+
+  .pm-mobile-message strong {
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  /* Adjust main content padding for header and bottom bar */
+  .pm-main {
+    padding: 70px 15px 80px 15px;
+    margin-left: 0;
+  }
+
+  /* Hide desktop title on mobile */
+  .pm-main-title {
     display: none;
   }
 

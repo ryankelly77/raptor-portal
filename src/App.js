@@ -1248,7 +1248,7 @@ function SendToPhoneModal({ isOpen, onClose, url }) {
 }
 
 // ============================================
-// PM WELCOME HEADER (sticky)
+// PM WELCOME HEADER (desktop)
 // ============================================
 function PMWelcomeHeader({ project }) {
   // Count all PM tasks across all phases
@@ -1299,6 +1299,65 @@ function PMWelcomeHeader({ project }) {
         </div>
       </div>
     </div>
+  );
+}
+
+// ============================================
+// PM MOBILE HEADER (sticky top bar)
+// ============================================
+function PMMobileHeader({ project }) {
+  const [showMessage, setShowMessage] = useState(false);
+
+  // Count all PM tasks across all phases
+  const allPmTasks = project.phases?.flatMap(phase =>
+    (phase.tasks || []).filter(t => t.label.startsWith('[PM]') || t.label.startsWith('[PM-TEXT]'))
+  ) || [];
+
+  const totalPmTasks = allPmTasks.length;
+  const completedPmTasks = allPmTasks.filter(t => t.completed).length;
+  const remainingPmTasks = totalPmTasks - completedPmTasks;
+  const progressPercent = totalPmTasks > 0 ? Math.round((completedPmTasks / totalPmTasks) * 100) : 0;
+
+  // Get first name from property manager
+  const fullName = project.propertyManager?.name || 'Property Manager';
+  const firstName = fullName.split(' ')[0];
+
+  const allDone = remainingPmTasks === 0 && totalPmTasks > 0;
+
+  return (
+    <>
+      <div className="pm-mobile-header">
+        <img src="/logo-dark.png" alt="Raptor Vending" className="pm-mobile-logo" />
+        <div className="pm-mobile-progress">
+          <div className="pm-mobile-progress-bar">
+            <div className="pm-mobile-progress-fill" style={{ width: `${project.overallProgress || 0}%` }}></div>
+          </div>
+          <span className="pm-mobile-progress-text">{project.overallProgress || 0}%</span>
+        </div>
+        <button className="pm-mobile-greeting" onClick={() => setShowMessage(!showMessage)}>
+          Hi, {firstName}
+          <svg className={`pm-mobile-greeting-icon ${showMessage ? 'open' : ''}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+      </div>
+
+      {showMessage && (
+        <div className="pm-mobile-message" onClick={() => setShowMessage(false)}>
+          {allDone ? (
+            <p>
+              <strong>You're all set!</strong> You've completed all your tasks.
+              We'll take it from here—a great new amenity is on its way to your tenants.
+            </p>
+          ) : (
+            <p>
+              <strong>Welcome!</strong> We're excited to bring Raptor infrastructure to your building.
+              Your part is simple: just {remainingPmTasks} of {totalPmTasks} items, marked below. Check them off as you go—we'll take care of everything else.
+            </p>
+          )}
+        </div>
+      )}
+    </>
   );
 }
 
@@ -1500,6 +1559,9 @@ function ProjectView() {
         </div>
       </aside>
 
+      {/* Mobile Header */}
+      <PMMobileHeader project={project} />
+
       {/* Mobile Bottom Bar */}
       <PMMobileBottomBar project={project} />
 
@@ -1615,6 +1677,9 @@ function PMPortal() {
           <PoweredBy />
         </div>
       </aside>
+
+      {/* Mobile Header */}
+      {data.projects[0] && <PMMobileHeader project={data.projects[0]} />}
 
       {/* Mobile Bottom Bar */}
       <PMMobileBottomBar

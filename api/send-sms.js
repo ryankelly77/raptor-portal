@@ -1,15 +1,15 @@
-// Vercel Serverless Function for sending SMS via Twilio
+// Vercel Serverless Function for sending SMS via HighLevel
 
-const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
-const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
-const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
+const HIGHLEVEL_API_KEY = process.env.HIGHLEVEL_API_KEY;
+const HIGHLEVEL_LOCATION_ID = process.env.HIGHLEVEL_LOCATION_ID;
+const FROM_PHONE_NUMBER = '+13854386325'; // Raptor Vending A2P validated number
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER) {
+  if (!HIGHLEVEL_API_KEY) {
     return res.status(500).json({ error: 'SMS service not configured' });
   }
 
@@ -30,30 +30,33 @@ export default async function handler(req, res) {
   try {
     const message = `View your Raptor Vending installation progress on your phone: ${url}`;
 
+    // HighLevel API v2 - Send SMS
     const response = await fetch(
-      `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`,
+      'https://services.leadconnectorhq.com/conversations/messages',
       {
         method: 'POST',
         headers: {
-          'Authorization': 'Basic ' + Buffer.from(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`).toString('base64'),
-          'Content-Type': 'application/x-www-form-urlencoded'
+          'Authorization': `Bearer ${HIGHLEVEL_API_KEY}`,
+          'Content-Type': 'application/json',
+          'Version': '2021-07-28'
         },
-        body: new URLSearchParams({
-          To: formattedPhone,
-          From: TWILIO_PHONE_NUMBER,
-          Body: message
-        }).toString()
+        body: JSON.stringify({
+          type: 'SMS',
+          phone: formattedPhone,
+          message: message,
+          ...(HIGHLEVEL_LOCATION_ID && { locationId: HIGHLEVEL_LOCATION_ID })
+        })
       }
     );
 
     const result = await response.json();
 
     if (!response.ok) {
-      console.error('Twilio error:', result);
-      throw new Error(result.message || 'Failed to send SMS');
+      console.error('HighLevel error:', result);
+      throw new Error(result.message || result.error || 'Failed to send SMS');
     }
 
-    return res.status(200).json({ success: true, sid: result.sid });
+    return res.status(200).json({ success: true, messageId: result.messageId || result.id });
 
   } catch (error) {
     console.error('SMS error:', error);

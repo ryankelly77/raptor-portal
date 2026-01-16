@@ -1740,6 +1740,35 @@ body {
   width: 140px;
 }
 
+/* Admin COI / PM-TEXT Inputs */
+.admin-coi-inputs {
+  width: 100%;
+  margin-left: 28px;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  background: #f9f9f9;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+.admin-coi-inputs .coi-row {
+  display: flex;
+  gap: 8px;
+}
+.admin-coi-inputs input {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+.admin-coi-inputs input:focus {
+  outline: none;
+  border-color: var(--raptor-orange);
+}
+
 /* Delivery Results Box (Public View) */
 .delivery-results-box {
   margin-top: 8px;

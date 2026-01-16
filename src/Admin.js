@@ -1075,6 +1075,7 @@ function PhaseEditor({ phase, phaseNumber, project, onUpdatePhase, onUpdateTask,
               const isAdminEquipment = task.label.startsWith('[ADMIN-EQUIPMENT]');
               const isAdminDelivery = task.label.startsWith('[ADMIN-DELIVERY]');
               const isAdminDoc = task.label.startsWith('[ADMIN-DOC]');
+              const isPmText = task.label.startsWith('[PM-TEXT]');
               const displayLabel = task.label
                 .replace('[ADMIN-DATE] ', '')
                 .replace('[ADMIN-SPEED] ', '')
@@ -1122,6 +1123,9 @@ function PhaseEditor({ phase, phaseNumber, project, onUpdatePhase, onUpdateTask,
                   )}
                   {isAdminDoc && task.completed && (
                     <TaskDocUpload task={task} onRefresh={onRefresh} />
+                  )}
+                  {isPmText && (
+                    <COIInputs task={task} onRefresh={onRefresh} />
                   )}
                 </div>
               );
@@ -1382,6 +1386,94 @@ function DeliveryInputs({ task, projectId, onRefresh }) {
         </div>
       ))}
       <button className="btn-add-small" onClick={addDelivery}>+ Add Delivery</button>
+    </div>
+  );
+}
+
+// ============================================
+// COI / PM-TEXT INPUTS
+// ============================================
+function COIInputs({ task, onRefresh }) {
+  // Parse existing data from pm_text_value (stored as JSON)
+  let existingData = {};
+  try {
+    if (task.pm_text_value) {
+      existingData = JSON.parse(task.pm_text_value);
+    }
+  } catch (e) {
+    // If it's plain text (legacy), treat as building name
+    existingData = { buildingName: task.pm_text_value || '' };
+  }
+
+  const [form, setForm] = useState({
+    buildingName: existingData.buildingName || '',
+    careOf: existingData.careOf || '',
+    street: existingData.street || '',
+    city: existingData.city || '',
+    state: existingData.state || '',
+    zip: existingData.zip || ''
+  });
+
+  const saveForm = async () => {
+    const jsonValue = JSON.stringify(form);
+    await updateTask(task.id, { pm_text_value: jsonValue });
+    onRefresh();
+  };
+
+  return (
+    <div className="admin-coi-inputs">
+      <div className="coi-row">
+        <input
+          type="text"
+          placeholder="Building name"
+          value={form.buildingName}
+          onChange={(e) => setForm({ ...form, buildingName: e.target.value })}
+          onBlur={saveForm}
+        />
+        <input
+          type="text"
+          placeholder="c/o (building owner)"
+          value={form.careOf}
+          onChange={(e) => setForm({ ...form, careOf: e.target.value })}
+          onBlur={saveForm}
+        />
+      </div>
+      <div className="coi-row">
+        <input
+          type="text"
+          placeholder="Street address"
+          value={form.street}
+          onChange={(e) => setForm({ ...form, street: e.target.value })}
+          onBlur={saveForm}
+          style={{ flex: 2 }}
+        />
+      </div>
+      <div className="coi-row">
+        <input
+          type="text"
+          placeholder="City"
+          value={form.city}
+          onChange={(e) => setForm({ ...form, city: e.target.value })}
+          onBlur={saveForm}
+          style={{ flex: 2 }}
+        />
+        <input
+          type="text"
+          placeholder="State"
+          value={form.state}
+          onChange={(e) => setForm({ ...form, state: e.target.value })}
+          onBlur={saveForm}
+          style={{ width: '80px' }}
+        />
+        <input
+          type="text"
+          placeholder="ZIP"
+          value={form.zip}
+          onChange={(e) => setForm({ ...form, zip: e.target.value })}
+          onBlur={saveForm}
+          style={{ width: '100px' }}
+        />
+      </div>
     </div>
   );
 }

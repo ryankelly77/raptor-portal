@@ -111,20 +111,19 @@ body {
   align-items: center;
   gap: 10px;
   padding: 12px 18px;
-  background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%);
+  background: var(--raptor-orange);
   border: 2px solid var(--raptor-orange);
   border-radius: 8px;
-  color: var(--raptor-orange);
+  color: white;
   text-decoration: none;
   font-weight: 600;
   transition: all 0.2s;
 }
 .document-link:hover {
-  background: var(--raptor-orange);
-  color: white;
+  background: var(--raptor-orange-light);
+  border-color: var(--raptor-orange-light);
 }
-.document-link:hover svg { color: white; }
-.document-link svg { color: var(--raptor-orange); }
+.document-link svg { color: white; }
 
 /* PM Action Notice - unified style for all PM action sections */
 .pm-notice { background: #FFF3E0; border: 1px solid #FFE0B2; border-radius: 8px; padding: 18px; margin-bottom: 18px; }

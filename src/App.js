@@ -1544,6 +1544,7 @@ function PublicPreview() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedToken, setSelectedToken] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Add noindex meta tag to prevent search engine indexing
   useEffect(() => {
@@ -1613,8 +1614,19 @@ function PublicPreview() {
 
   const sortedProperties = Object.keys(projects).sort();
 
+  // Find current project name for mobile selector
+  const allProjects = sortedProperties.flatMap(p => projects[p]);
+  const currentProject = allProjects.find(p => p.public_token === selectedToken);
+  const currentPropertyName = currentProject?.propertyName || 'Select Property';
+
+  const handleMobileSelect = (token) => {
+    setSelectedToken(token);
+    setMobileMenuOpen(false);
+  };
+
   return (
     <div className="preview-pane public-preview">
+      {/* Desktop Sidebar */}
       <div className="preview-sidebar">
         <div className="preview-sidebar-header">
           <img src="/logo-light.png" alt="Raptor Vending" className="preview-logo" />
@@ -1638,6 +1650,8 @@ function PublicPreview() {
           ))}
         </nav>
       </div>
+
+      {/* Main Content */}
       <div className="preview-content">
         {selectedToken ? (
           <iframe
@@ -1648,6 +1662,34 @@ function PublicPreview() {
         ) : (
           <div className="preview-placeholder">
             <p>No projects available</p>
+          </div>
+        )}
+      </div>
+
+      {/* Mobile Bottom Selector */}
+      <div className={`preview-mobile-selector ${mobileMenuOpen ? 'open' : ''}`}>
+        <button className="preview-mobile-toggle" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+          <span>{currentPropertyName}</span>
+          <svg className={`preview-mobile-caret ${mobileMenuOpen ? 'open' : ''}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        {mobileMenuOpen && (
+          <div className="preview-mobile-menu">
+            {sortedProperties.map(propertyName => (
+              <div key={propertyName} className="preview-mobile-group">
+                <div className="preview-mobile-property">{propertyName}</div>
+                {projects[propertyName].map(project => (
+                  <button
+                    key={project.id}
+                    className={`preview-mobile-item ${selectedToken === project.public_token ? 'active' : ''}`}
+                    onClick={() => handleMobileSelect(project.public_token)}
+                  >
+                    {project.locationName}
+                  </button>
+                ))}
+              </div>
+            ))}
           </div>
         )}
       </div>

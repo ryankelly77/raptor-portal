@@ -668,14 +668,14 @@ body {
 .admin-section { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
 .editing-sticky-header {
   position: sticky;
-  top: 0;
-  z-index: 100;
+  top: 100px;
+  z-index: 99;
   background: var(--raptor-black);
   color: white;
-  padding: 12px 20px;
+  padding: 18px 20px;
   margin: -25px -25px 20px -25px;
-  font-size: 1em;
-  border-radius: 12px 12px 0 0;
+  font-size: 1.35em;
+  text-align: center;
 }
 .editing-sticky-header strong {
   color: var(--raptor-orange);

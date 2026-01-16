@@ -6,13 +6,18 @@ A React-based installation progress tracking application for property managers t
 
 ## Overview
 
-This portal allows property managers to track the progress of their Raptor Vending equipment installations through a 5-phase timeline. It includes:
+This portal allows property managers to track the progress of their Raptor Vending equipment installations through an 8-phase timeline.
+
+## Features
 
 - **Public Project Pages** - Shareable progress pages for property managers
 - **Property Manager Portal** - Multi-property dashboard for PMs with multiple locations
 - **Admin Dashboard** - Full control over projects, phases, tasks, and equipment
 - **Preview Mode** - Internal preview of all projects for Raptor staff
 - **Automated Email Reminders** - Weekly reminder emails for incomplete tasks
+- **Delivery Notifications** - Automated emails when equipment ships
+- **Speed Test Warnings** - Alerts when network speeds are below 10Mbps
+- **QR Code Sharing** - "Send to Phone" feature for mobile access
 
 ## Tech Stack
 
@@ -26,10 +31,13 @@ This portal allows property managers to track the progress of their Raptor Vendi
 ## Installation Timeline Phases
 
 1. **Site Assessment & Planning** - Site survey, measurements, cellular signal verification, speed tests
-2. **Employee Preference Survey** - Snack and meal customization survey distribution
-3. **Building Access & Compliance** - COI documentation, building access requirements
-4. **Equipment Ordering & Delivery** - Enclosure selection, equipment ordering, delivery tracking
-5. **Installation & Go-Live** - Health inspection, installation, stocking, launch
+2. **Contract Signature** - Agreement execution and documentation
+3. **Employee Preference Survey** - Snack and meal customization survey distribution
+4. **Electrical & Networking Preparation** - Infrastructure requirements and property coordination
+5. **Building Access & Coordination** - COI documentation, building access requirements
+6. **Equipment Ordering & Delivery** - Enclosure selection, equipment ordering, delivery tracking
+7. **System Installation & Integration** - Equipment installation and setup
+8. **Testing, Stocking & Launch** - Final testing, initial stocking, go-live
 
 ## Database Schema
 

@@ -1388,18 +1388,22 @@ function PMMobileBottomBar({ project, projects = [], onSelectProject, selectedTo
     <div className="pm-mobile-bar">
       {/* Items Remaining */}
       <div className="pm-mobile-tasks">
-        <div className={`pm-mobile-tasks-count ${remainingTasks === 0 ? 'complete' : ''}`}>
-          {remainingTasks === 0 ? (
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="16" height="16">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-          ) : (
-            remainingTasks
-          )}
-        </div>
-        <span className="pm-mobile-tasks-label">
-          {remainingTasks === 0 ? 'All done!' : `Only ${remainingTasks} to-do${remainingTasks !== 1 ? 's' : ''}!`}
-        </span>
+        {remainingTasks === 0 ? (
+          <>
+            <div className="pm-mobile-tasks-count complete">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="16" height="16">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+            <span className="pm-mobile-tasks-label">All done!</span>
+          </>
+        ) : (
+          <>
+            <span className="pm-mobile-tasks-prefix">Only</span>
+            <div className="pm-mobile-tasks-count">{remainingTasks}</div>
+            <span className="pm-mobile-tasks-label">to-do{remainingTasks !== 1 ? 's' : ''}!</span>
+          </>
+        )}
       </div>
 
       {/* Property Name / Selector */}

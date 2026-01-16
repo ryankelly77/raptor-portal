@@ -949,8 +949,20 @@ body {
 
   /* Adjust main content padding for header and bottom bar */
   .pm-main {
-    padding: 80px 15px 90px 15px;
+    padding: 15px;
+    padding-top: 75px;
+    padding-bottom: 90px;
     margin-left: 0;
+  }
+
+  /* Remove any top margin from first widget */
+  .pm-main > .progress-widget:first-child,
+  .pm-main > .pm-project-section:first-child {
+    margin-top: 0;
+  }
+
+  .progress-widget {
+    margin-top: 0;
   }
 
   /* Hide desktop title on mobile */
@@ -996,9 +1008,15 @@ body {
     background: #2e7d32;
   }
 
+  .pm-mobile-tasks-prefix {
+    color: white;
+    font-size: 0.95em;
+    font-weight: 500;
+  }
+
   .pm-mobile-tasks-label {
     color: white;
-    font-size: 0.9em;
+    font-size: 0.95em;
     font-weight: 500;
   }
 

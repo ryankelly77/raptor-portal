@@ -1545,6 +1545,17 @@ function PublicPreview() {
   const [loading, setLoading] = useState(true);
   const [selectedToken, setSelectedToken] = useState(null);
 
+  // Add noindex meta tag to prevent search engine indexing
+  useEffect(() => {
+    const meta = document.createElement('meta');
+    meta.name = 'robots';
+    meta.content = 'noindex, nofollow';
+    document.head.appendChild(meta);
+    return () => {
+      document.head.removeChild(meta);
+    };
+  }, []);
+
   useEffect(() => {
     async function loadProjects() {
       try {

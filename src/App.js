@@ -1776,6 +1776,7 @@ function PublicPreview() {
   const [loading, setLoading] = useState(true);
   const [selectedToken, setSelectedToken] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showSendToPhone, setShowSendToPhone] = useState(false);
 
   // Add noindex meta tag to prevent search engine indexing
   useEffect(() => {
@@ -1880,6 +1881,14 @@ function PublicPreview() {
             </div>
           ))}
         </nav>
+        <div className="pm-sidebar-send-phone" style={{ marginTop: 'auto', padding: '20px' }}>
+          <button className="send-phone-btn" onClick={() => setShowSendToPhone(true)}>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
+              <path d="M12 18h.01M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/>
+            </svg>
+            Send to Phone
+          </button>
+        </div>
       </div>
 
       {/* Main Content */}
@@ -1924,6 +1933,13 @@ function PublicPreview() {
           </div>
         )}
       </div>
+
+      {/* Send to Phone Modal */}
+      <SendToPhoneModal
+        isOpen={showSendToPhone}
+        onClose={() => setShowSendToPhone(false)}
+        url={selectedToken ? `${window.location.origin}/project/${selectedToken}` : window.location.href}
+      />
     </div>
   );
 }

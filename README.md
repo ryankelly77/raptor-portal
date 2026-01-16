@@ -212,12 +212,30 @@ raptor-portal/
 
 ## URLs
 
-- **Production:** https://portal.raptor-vending.com
-- **Public Project:** https://portal.raptor-vending.com/project/{token}
-- **PM Portal:** https://portal.raptor-vending.com/pm/{email}
-- **Preview:** https://portal.raptor-vending.com/preview
-- **Admin:** https://portal.raptor-vending.com/admin
-- **Survey:** https://portal.raptor-vending.com/survey/{token}
+| Page | URL | Description |
+|------|-----|-------------|
+| Production | https://portal.raptor-vending.com | Main site |
+| Public Project | `/project/{token}` | Single project view for sharing |
+| PM Portal | `/pm/{email}` | Property manager dashboard (all their projects) |
+| Preview | `/preview` | Internal preview of all projects (Raptor staff) |
+| Admin | `/admin` | Admin dashboard |
+| Survey | `/survey/{token}` | Trackable survey redirect |
+
+### Property Manager Portal
+
+Property managers can access their personalized dashboard at:
+```
+https://portal.raptor-vending.com/pm/{their-email}
+```
+
+Example: `https://portal.raptor-vending.com/pm/john@propertymanager.com`
+
+This shows all projects associated with properties managed by that email address, with:
+- Progress overview for each location
+- Ability to complete PM-assigned tasks
+- COI address entry forms
+- Survey link sharing
+- Mobile-optimized interface with sticky header/footer
 
 ---
 

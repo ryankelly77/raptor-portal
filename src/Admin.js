@@ -474,6 +474,9 @@ function ProjectEditor({ project, details, locations, properties, managers, onBa
 
   return (
     <div className="admin-section">
+      <div className="editing-sticky-header">
+        You are editing: <strong>{property?.name || 'Unknown Property'}</strong> &mdash; <strong>{location?.name || 'Unknown Location'}</strong>
+      </div>
       <div className="section-header">
         <button className="btn-back" onClick={onBack}>← Back to Projects</button>
         <h2>{project.project_number}</h2>

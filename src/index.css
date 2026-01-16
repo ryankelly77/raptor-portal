@@ -1961,8 +1961,8 @@ body {
   cursor: not-allowed;
 }
 .pm-text-value {
-  font-weight: 600;
-  color: var(--raptor-orange);
+  font-weight: 500;
+  color: var(--text-secondary);
 }
 
 /* What's this link */
@@ -2223,8 +2223,7 @@ body {
 
 .pm-text-value {
   font-size: 0.95em;
-  color: var(--raptor-orange);
-  font-weight: 600;
+  color: var(--text-secondary);
   line-height: 1.5;
 }
 

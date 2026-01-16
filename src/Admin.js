@@ -155,6 +155,12 @@ export default function Admin() {
           >
             Activity
           </button>
+          <button
+            className={activeTab === 'preview' ? 'active' : ''}
+            onClick={() => setActiveTab('preview')}
+          >
+            Preview
+          </button>
         </nav>
         <Link to="/" className="admin-home-link">← Back</Link>
       </header>
@@ -214,6 +220,10 @@ export default function Admin() {
 
         {activeTab === 'activity' && (
           <ActivityLog projects={data.projects} locations={data.locations} properties={data.properties} />
+        )}
+
+        {activeTab === 'preview' && (
+          <PreviewPane projects={data.projects} locations={data.locations} properties={data.properties} />
         )}
       </main>
 
@@ -2789,6 +2799,69 @@ function GlobalDocsManager({ documents = [], onRefresh }) {
               </div>
             </div>
           ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================
+// PREVIEW PANE (Admin view of PM pages)
+// ============================================
+function PreviewPane({ projects, locations, properties }) {
+  const [selectedToken, setSelectedToken] = useState(null);
+
+  // Group projects by property
+  const projectsByProperty = {};
+  projects.forEach(project => {
+    const location = locations.find(l => l.id === project.location_id);
+    const property = location ? properties.find(p => p.id === location.property_id) : null;
+    const propertyName = property?.name || 'Unknown Property';
+
+    if (!projectsByProperty[propertyName]) {
+      projectsByProperty[propertyName] = [];
+    }
+    projectsByProperty[propertyName].push({
+      ...project,
+      locationName: location?.name || 'Unknown Location',
+      propertyName
+    });
+  });
+
+  // Sort properties alphabetically
+  const sortedProperties = Object.keys(projectsByProperty).sort();
+
+  return (
+    <div className="preview-pane">
+      <div className="preview-sidebar">
+        <h3>All Projects</h3>
+        {sortedProperties.map(propertyName => (
+          <div key={propertyName} className="preview-property-group">
+            <div className="preview-property-name">{propertyName}</div>
+            {projectsByProperty[propertyName].map(project => (
+              <button
+                key={project.id}
+                className={`preview-project-btn ${selectedToken === project.public_token ? 'active' : ''}`}
+                onClick={() => setSelectedToken(project.public_token)}
+              >
+                <span className="preview-location">{project.locationName}</span>
+                <span className="preview-project-number">{project.project_number}</span>
+              </button>
+            ))}
+          </div>
+        ))}
+      </div>
+      <div className="preview-content">
+        {selectedToken ? (
+          <iframe
+            src={`/project/${selectedToken}`}
+            title="Project Preview"
+            className="preview-iframe"
+          />
+        ) : (
+          <div className="preview-placeholder">
+            <p>Select a project from the sidebar to preview</p>
+          </div>
         )}
       </div>
     </div>

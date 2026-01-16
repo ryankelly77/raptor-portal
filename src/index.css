@@ -1226,25 +1226,81 @@ body {
     min-width: 0;
   }
 
-  /* Survey URL field mobile */
+  /* Survey URL field mobile - keep button to the right */
   .survey-url-field {
-    flex-direction: column;
+    flex-direction: row;
     gap: 8px;
   }
 
   .survey-url-field input {
-    font-size: 0.8em;
-    padding: 10px;
+    font-size: 0.75em;
+    padding: 8px 10px;
+    min-width: 0;
+    flex: 1;
   }
 
   .survey-url-field .copy-btn {
-    align-self: flex-end;
+    flex-shrink: 0;
+    padding: 8px;
   }
 
   /* PM text inline input */
   .pm-text-inline-input {
     width: 100%;
     box-sizing: border-box;
+  }
+
+  /* Speed results box mobile - stack vertically */
+  .speed-results-box {
+    padding: 10px 12px;
+  }
+
+  .speed-values {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .speed-value {
+    justify-content: space-between;
+  }
+
+  .speed-label {
+    font-size: 0.8em;
+  }
+
+  .speed-number {
+    font-size: 0.9em;
+  }
+
+  .speed-warning {
+    padding-top: 10px;
+  }
+
+  .speed-warning span {
+    font-size: 0.8em;
+  }
+
+  /* Delivery results box mobile */
+  .delivery-results-box {
+    padding: 10px 12px;
+  }
+
+  .delivery-values {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .delivery-value {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .delivery-equipment {
+    font-size: 0.9em;
+  }
+
+  .delivery-label, .delivery-data {
+    font-size: 0.8em;
   }
 }
 

@@ -1226,11 +1226,62 @@ function PoweredBy() {
   );
 }
 
-// Send to Phone Modal - QR Code only
+// Send to Phone Modal - QR Code + SMS
 function SendToPhoneModal({ isOpen, onClose, url }) {
+  const [phone, setPhone] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
+
   if (!isOpen) return null;
 
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+
+  const formatPhone = (value) => {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+  };
+
+  const handlePhoneChange = (e) => {
+    const formatted = formatPhone(e.target.value);
+    setPhone(formatted);
+    setError('');
+    setSent(false);
+  };
+
+  const handleSendSMS = async () => {
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length !== 10) {
+      setError('Please enter a valid 10-digit phone number');
+      return;
+    }
+
+    setSending(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/send-sms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: digits, url })
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setSent(true);
+        setPhone('');
+      } else {
+        setError(result.error || 'Failed to send SMS');
+      }
+    } catch (err) {
+      setError('Failed to send SMS');
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
     <div className="send-phone-overlay" onClick={onClose}>
@@ -1242,7 +1293,29 @@ function SendToPhoneModal({ isOpen, onClose, url }) {
           </svg>
         </div>
         <h3>View on Your Phone</h3>
-        <p>Scan this QR code with your phone's camera to open this page.</p>
+
+        <div className="send-phone-sms">
+          <p>Enter your phone number to receive a link:</p>
+          <div className="send-phone-input-row">
+            <input
+              type="tel"
+              placeholder="(555) 555-5555"
+              value={phone}
+              onChange={handlePhoneChange}
+              maxLength={14}
+            />
+            <button onClick={handleSendSMS} disabled={sending || phone.replace(/\D/g, '').length !== 10}>
+              {sending ? 'Sending...' : 'Send'}
+            </button>
+          </div>
+          {error && <div className="send-phone-error">{error}</div>}
+          {sent && <div className="send-phone-success">Link sent!</div>}
+        </div>
+
+        <div className="send-phone-divider">
+          <span>or scan QR code</span>
+        </div>
+
         <div className="send-phone-qr">
           <img src={qrCodeUrl} alt="QR Code" />
         </div>

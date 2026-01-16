@@ -708,15 +708,66 @@ body {
   cursor: not-allowed;
 }
 
+.send-phone-sms {
+  margin: 15px 0;
+}
+
+.send-phone-sms p {
+  margin: 0 0 10px 0;
+  font-size: 0.9em;
+  color: var(--text-secondary);
+}
+
+.send-phone-input-row {
+  display: flex;
+  gap: 10px;
+}
+
+.send-phone-input-row input {
+  flex: 1;
+  padding: 12px 15px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 1em;
+  text-align: center;
+}
+
+.send-phone-input-row input:focus {
+  outline: none;
+  border-color: var(--raptor-orange);
+}
+
+.send-phone-input-row button {
+  padding: 12px 20px;
+  background: var(--raptor-orange);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95em;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.send-phone-input-row button:hover:not(:disabled) {
+  background: #e55000;
+}
+
+.send-phone-input-row button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .send-phone-error {
   color: #e53935;
   font-size: 0.85em;
-  margin-bottom: 15px;
+  margin-top: 8px;
 }
 
 .send-phone-success {
-  padding: 20px;
   color: #2e7d32;
+  font-size: 0.85em;
+  margin-top: 8px;
 }
 
 .send-phone-success svg {

@@ -1,10 +1,12 @@
 // Vercel Serverless Function for sending SMS via HighLevel
 
-const HIGHLEVEL_API_KEY = process.env.HIGHLEVEL_API_KEY;
-const HIGHLEVEL_LOCATION_ID = process.env.HIGHLEVEL_LOCATION_ID;
 const FROM_PHONE_NUMBER = '+13854386325'; // Raptor Vending A2P validated number
 
 export default async function handler(req, res) {
+  // Read env vars inside handler to ensure they're available
+  const HIGHLEVEL_API_KEY = process.env.HIGHLEVEL_API_KEY;
+  const HIGHLEVEL_LOCATION_ID = process.env.HIGHLEVEL_LOCATION_ID;
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }

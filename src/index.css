@@ -3203,8 +3203,8 @@ body {
   .preview-mobile-header {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
+    gap: 10px;
+    padding: 8px 12px;
     background: white;
     border-bottom: 1px solid var(--border-color);
     position: fixed;
@@ -3215,20 +3215,20 @@ body {
   }
 
   .preview-mobile-logo {
-    height: 32px;
+    height: 28px;
     width: auto;
   }
 
   .preview-mobile-title {
-    font-size: 1.1em;
+    font-size: 1em;
     font-weight: 600;
     color: var(--text-primary);
   }
 
   .preview-content {
     flex: 1;
-    height: calc(100vh - 112px);
-    margin-top: 56px;
+    height: calc(100vh - 100px);
+    margin-top: 44px;
   }
 
   /* Mobile bottom selector */

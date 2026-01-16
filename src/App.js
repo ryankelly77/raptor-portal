@@ -301,6 +301,7 @@ function TaskItem({ task, globalDocuments, readOnly = false }) {
         {hasEnclosureData && (
           <EnclosureInfoBox
             enclosureLabel={getEnclosureLabel()}
+            enclosureType={task.enclosure_type}
             isCustomColor={isCustomColor}
           />
         )}
@@ -342,8 +343,14 @@ function TaskItem({ task, globalDocuments, readOnly = false }) {
 }
 
 // Survey link for in-progress survey phases
-function EnclosureInfoBox({ enclosureLabel, isCustomColor }) {
+function EnclosureInfoBox({ enclosureLabel, enclosureType, isCustomColor }) {
   const [showModal, setShowModal] = useState(false);
+
+  const imageUrl = enclosureType === 'wrap'
+    ? 'https://xfkjszbkcmuumzjbnuev.supabase.co/storage/v1/object/public/project-files/magnetic%20wrap%20example.png'
+    : 'https://xfkjszbkcmuumzjbnuev.supabase.co/storage/v1/object/public/project-files/pic%20of%20custom%20enclosure.png';
+
+  const imageAlt = enclosureType === 'wrap' ? 'Magnetic Wrap Example' : 'Custom Enclosure Example';
 
   return (
     <>
@@ -370,8 +377,8 @@ function EnclosureInfoBox({ enclosureLabel, isCustomColor }) {
           <div className="enclosure-modal" onClick={(e) => e.stopPropagation()}>
             <button className="enclosure-modal-close" onClick={() => setShowModal(false)}>×</button>
             <img
-              src="https://xfkjszbkcmuumzjbnuev.supabase.co/storage/v1/object/public/project-files/pic%20of%20custom%20enclosure.png"
-              alt="Custom Enclosure Example"
+              src={imageUrl}
+              alt={imageAlt}
             />
           </div>
         </div>

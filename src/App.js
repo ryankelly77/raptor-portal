@@ -1892,6 +1892,12 @@ function PublicPreview() {
       </div>
 
       {/* Main Content */}
+      {/* Mobile Header */}
+      <div className="preview-mobile-header">
+        <img src="/logo-dark.png" alt="Raptor Vending" className="preview-mobile-logo" />
+        <span className="preview-mobile-title">Installation Progress</span>
+      </div>
+
       <div className="preview-content">
         {selectedToken ? (
           <iframe

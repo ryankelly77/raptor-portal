@@ -3180,7 +3180,10 @@ body {
   font-size: 1.1em;
 }
 
-/* Mobile Bottom Selector (hidden on desktop) */
+/* Mobile Header and Bottom Selector (hidden on desktop) */
+.preview-mobile-header {
+  display: none;
+}
 .preview-mobile-selector {
   display: none;
 }
@@ -3196,9 +3199,36 @@ body {
     display: none;
   }
 
+  /* Mobile header */
+  .preview-mobile-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: white;
+    border-bottom: 1px solid var(--border-color);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+  }
+
+  .preview-mobile-logo {
+    height: 32px;
+    width: auto;
+  }
+
+  .preview-mobile-title {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
   .preview-content {
     flex: 1;
-    height: calc(100vh - 56px);
+    height: calc(100vh - 112px);
+    margin-top: 56px;
   }
 
   /* Mobile bottom selector */

@@ -1219,74 +1219,16 @@ function PoweredBy() {
   );
 }
 
-// Send to Phone Modal
+// Send to Phone Modal - QR Code only
 function SendToPhoneModal({ isOpen, onClose, url }) {
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState(false);
-  const [error, setError] = useState('');
-
   if (!isOpen) return null;
 
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
 
-  const formatPhoneNumber = (value) => {
-    const digits = value.replace(/\D/g, '');
-    if (digits.length <= 3) return digits;
-    if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
-  };
-
-  const handlePhoneChange = (e) => {
-    const formatted = formatPhoneNumber(e.target.value);
-    setPhoneNumber(formatted);
-    setError('');
-    setSent(false);
-  };
-
-  const handleSend = async () => {
-    const digits = phoneNumber.replace(/\D/g, '');
-    if (digits.length !== 10) {
-      setError('Please enter a valid 10-digit phone number');
-      return;
-    }
-
-    setSending(true);
-    setError('');
-
-    try {
-      const response = await fetch('/api/send-sms', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: digits, url })
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to send message');
-      }
-
-      setSent(true);
-      setPhoneNumber('');
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSending(false);
-    }
-  };
-
-  const handleClose = () => {
-    setPhoneNumber('');
-    setSent(false);
-    setError('');
-    onClose();
-  };
-
   return (
-    <div className="send-phone-overlay" onClick={handleClose}>
+    <div className="send-phone-overlay" onClick={onClose}>
       <div className="send-phone-modal" onClick={(e) => e.stopPropagation()}>
-        <button className="send-phone-close" onClick={handleClose}>×</button>
+        <button className="send-phone-close" onClick={onClose}>×</button>
         <div className="send-phone-icon">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="32" height="32">
             <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
@@ -1294,44 +1236,12 @@ function SendToPhoneModal({ isOpen, onClose, url }) {
           </svg>
         </div>
         <h3>View on Your Phone</h3>
-
-        {sent ? (
-          <div className="send-phone-success">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-              <polyline points="22 4 12 14.01 9 11.01"/>
-            </svg>
-            <p>Link sent! Check your phone.</p>
-          </div>
-        ) : (
-          <>
-            <p>Enter your phone number and we'll text you a link to this page.</p>
-            <div className="send-phone-form">
-              <input
-                type="tel"
-                placeholder="(555) 123-4567"
-                value={phoneNumber}
-                onChange={handlePhoneChange}
-                className="send-phone-input"
-                maxLength={14}
-              />
-              <button
-                className="send-phone-submit"
-                onClick={handleSend}
-                disabled={sending || phoneNumber.replace(/\D/g, '').length !== 10}
-              >
-                {sending ? 'Sending...' : 'Send Link'}
-              </button>
-            </div>
-            {error && <div className="send-phone-error">{error}</div>}
-          </>
-        )}
-
-        <div className="send-phone-divider">
-          <span>or scan QR code</span>
-        </div>
+        <p>Scan this QR code with your phone's camera to open this page.</p>
         <div className="send-phone-qr">
           <img src={qrCodeUrl} alt="QR Code" />
+        </div>
+        <div className="send-phone-url">
+          {url}
         </div>
       </div>
     </div>

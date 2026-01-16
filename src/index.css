@@ -760,8 +760,18 @@ body {
 
 .send-phone-qr img {
   display: block;
-  width: 150px;
-  height: 150px;
+  width: 180px;
+  height: 180px;
+}
+
+.send-phone-url {
+  margin-top: 15px;
+  padding: 10px 15px;
+  background: var(--bg-light);
+  border-radius: 8px;
+  font-size: 0.75em;
+  color: var(--text-muted);
+  word-break: break-all;
 }
 
 .pm-main {

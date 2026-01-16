@@ -3203,8 +3203,8 @@ body {
   .preview-mobile-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 8px 12px;
+    gap: 12px;
+    padding: 12px 16px;
     background: white;
     border-bottom: 1px solid var(--border-color);
     position: fixed;
@@ -3215,20 +3215,20 @@ body {
   }
 
   .preview-mobile-logo {
-    height: 28px;
+    height: 32px;
     width: auto;
   }
 
   .preview-mobile-title {
-    font-size: 1em;
+    font-size: 1.1em;
     font-weight: 600;
     color: var(--text-primary);
   }
 
   .preview-content {
     flex: 1;
-    height: calc(100vh - 100px);
-    margin-top: 44px;
+    height: calc(100vh - 112px);
+    margin-top: 56px;
   }
 
   /* Mobile bottom selector */
@@ -3308,7 +3308,8 @@ body {
   }
 
   .admin-preview-view {
-    padding: 15px;
+    padding: 8px;
+    padding-top: 0;
   }
 
   .admin-preview-view .pm-main {
@@ -3333,7 +3334,8 @@ body {
   }
 
   .admin-preview-view {
-    padding: 10px;
+    padding: 6px;
+    padding-top: 0;
   }
 }
 

@@ -3314,6 +3314,9 @@ body {
 
   .admin-preview-view .pm-main {
     font-size: 1em;
+    padding: 0;
+    padding-top: 0;
+    padding-bottom: 0;
   }
 }
 
@@ -3336,6 +3339,12 @@ body {
   .admin-preview-view {
     padding: 6px;
     padding-top: 0;
+  }
+
+  .admin-preview-view .pm-main {
+    padding: 0;
+    padding-top: 0;
+    padding-bottom: 0;
   }
 }
 

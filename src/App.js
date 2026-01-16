@@ -1219,6 +1219,125 @@ function PoweredBy() {
   );
 }
 
+// Send to Phone Modal
+function SendToPhoneModal({ isOpen, onClose, url }) {
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
+
+  if (!isOpen) return null;
+
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+
+  const formatPhoneNumber = (value) => {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+  };
+
+  const handlePhoneChange = (e) => {
+    const formatted = formatPhoneNumber(e.target.value);
+    setPhoneNumber(formatted);
+    setError('');
+    setSent(false);
+  };
+
+  const handleSend = async () => {
+    const digits = phoneNumber.replace(/\D/g, '');
+    if (digits.length !== 10) {
+      setError('Please enter a valid 10-digit phone number');
+      return;
+    }
+
+    setSending(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/send-sms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: digits, url })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to send message');
+      }
+
+      setSent(true);
+      setPhoneNumber('');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleClose = () => {
+    setPhoneNumber('');
+    setSent(false);
+    setError('');
+    onClose();
+  };
+
+  return (
+    <div className="send-phone-overlay" onClick={handleClose}>
+      <div className="send-phone-modal" onClick={(e) => e.stopPropagation()}>
+        <button className="send-phone-close" onClick={handleClose}>×</button>
+        <div className="send-phone-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="32" height="32">
+            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+            <line x1="12" y1="18" x2="12.01" y2="18"/>
+          </svg>
+        </div>
+        <h3>View on Your Phone</h3>
+
+        {sent ? (
+          <div className="send-phone-success">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+            <p>Link sent! Check your phone.</p>
+          </div>
+        ) : (
+          <>
+            <p>Enter your phone number and we'll text you a link to this page.</p>
+            <div className="send-phone-form">
+              <input
+                type="tel"
+                placeholder="(555) 123-4567"
+                value={phoneNumber}
+                onChange={handlePhoneChange}
+                className="send-phone-input"
+                maxLength={14}
+              />
+              <button
+                className="send-phone-submit"
+                onClick={handleSend}
+                disabled={sending || phoneNumber.replace(/\D/g, '').length !== 10}
+              >
+                {sending ? 'Sending...' : 'Send Link'}
+              </button>
+            </div>
+            {error && <div className="send-phone-error">{error}</div>}
+          </>
+        )}
+
+        <div className="send-phone-divider">
+          <span>or scan QR code</span>
+        </div>
+        <div className="send-phone-qr">
+          <img src={qrCodeUrl} alt="QR Code" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ============================================
 // PM WELCOME HEADER (sticky)
 // ============================================
@@ -1302,6 +1421,9 @@ function ProjectView() {
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showSendToPhone, setShowSendToPhone] = useState(false);
+
+  const currentUrl = window.location.href.split('?')[0]; // Remove query params
 
   async function loadProject() {
     try {
@@ -1382,6 +1504,16 @@ function ProjectView() {
           </a>
         </div>
 
+        <div className="pm-sidebar-send-phone">
+          <button className="send-phone-btn" onClick={() => setShowSendToPhone(true)}>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+              <line x1="12" y1="18" x2="12.01" y2="18"/>
+            </svg>
+            Send to Phone
+          </button>
+        </div>
+
         <div className="pm-sidebar-footer">
           <PoweredBy />
         </div>
@@ -1393,6 +1525,13 @@ function ProjectView() {
         <PMWelcomeHeader project={project} />
         <ProjectWidget project={project} showLogo={false} onRefresh={loadProject} />
       </main>
+
+      {/* Send to Phone Modal */}
+      <SendToPhoneModal
+        isOpen={showSendToPhone}
+        onClose={() => setShowSendToPhone(false)}
+        url={currentUrl}
+      />
     </div>
   );
 }
@@ -1405,6 +1544,9 @@ function PMPortal() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showSendToPhone, setShowSendToPhone] = useState(false);
+
+  const currentUrl = window.location.href;
 
   useEffect(() => {
     async function loadData() {
@@ -1476,6 +1618,16 @@ function PMPortal() {
           </a>
         </div>
 
+        <div className="pm-sidebar-send-phone">
+          <button className="send-phone-btn" onClick={() => setShowSendToPhone(true)}>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+              <line x1="12" y1="18" x2="12.01" y2="18"/>
+            </svg>
+            Send to Phone
+          </button>
+        </div>
+
         <div className="pm-sidebar-footer">
           <PoweredBy />
         </div>
@@ -1497,6 +1649,13 @@ function PMPortal() {
           ))
         )}
       </main>
+
+      {/* Send to Phone Modal */}
+      <SendToPhoneModal
+        isOpen={showSendToPhone}
+        onClose={() => setShowSendToPhone(false)}
+        url={currentUrl}
+      />
     </div>
   );
 }

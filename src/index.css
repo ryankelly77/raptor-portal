@@ -861,7 +861,7 @@ body {
   }
 
   .pm-mobile-logo {
-    height: 28px;
+    height: 36px;
     width: auto;
     flex-shrink: 0;
   }
@@ -949,7 +949,7 @@ body {
 
   /* Adjust main content padding for header and bottom bar */
   .pm-main {
-    padding: 70px 15px 80px 15px;
+    padding: 65px 15px 80px 15px;
     margin-left: 0;
   }
 
@@ -1000,6 +1000,16 @@ body {
     color: rgba(255,255,255,0.7);
     font-size: 0.8em;
     font-weight: 500;
+  }
+
+  .pm-mobile-tasks-text {
+    color: white;
+    font-size: 0.95em;
+  }
+
+  .pm-mobile-tasks-text strong {
+    color: var(--raptor-orange);
+    font-size: 1.1em;
   }
 
   .pm-mobile-property {

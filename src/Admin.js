@@ -3367,9 +3367,31 @@ function AdminMessagesSection({ propertyManagers, onUnreadChange }) {
     <div className="admin-messages-section">
       <div className="section-header">
         <h2>Messages</h2>
-        <button className="btn-secondary" onClick={() => { loadConversations(); if (selectedPM) loadMessages(selectedPM.id); }}>
-          Refresh
-        </button>
+        <div className="section-header-actions">
+          <select
+            className="admin-new-convo-select"
+            value=""
+            onChange={(e) => {
+              const pm = propertyManagers.find(p => p.id === e.target.value);
+              if (pm) setSelectedPM(pm);
+            }}
+          >
+            <option value="">+ New Message</option>
+            {propertyManagers
+              .filter(pm => !conversations.find(c => c.id === pm.id))
+              .map(pm => (
+                <option key={pm.id} value={pm.id}>{pm.name}</option>
+              ))
+            }
+          </select>
+          <button className="btn-secondary btn-icon" onClick={() => { loadConversations(); if (selectedPM) loadMessages(selectedPM.id); }}>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+              <polyline points="23 4 23 10 17 10"/>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+            </svg>
+            Refresh
+          </button>
+        </div>
       </div>
 
       <div className="admin-messages-container">

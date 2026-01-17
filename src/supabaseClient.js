@@ -125,6 +125,7 @@ export async function fetchProjectByToken(token) {
       phone: project.raptor_pm_phone
     },
     propertyManager: propertyManager ? {
+      id: propertyManager.id,
       name: propertyManager.name,
       company: propertyManager.company,
       email: propertyManager.email,

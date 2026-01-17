@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useParams, Link, useSearchParams } from 'react-router-dom';
 import { fetchProjectByToken, fetchProjectsByPMToken, recordSurveyClick, updateTask } from './supabaseClient';
 import Admin from './Admin';
@@ -1549,8 +1549,19 @@ function ProjectView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showSendToPhone, setShowSendToPhone] = useState(false);
+  const [viewMode, setViewMode] = useState('progress'); // 'progress' or 'messages'
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const currentUrl = window.location.href.split('?')[0]; // Remove query params
+
+  // Add noindex meta tag
+  useEffect(() => {
+    const meta = document.createElement('meta');
+    meta.name = 'robots';
+    meta.content = 'noindex, nofollow';
+    document.head.appendChild(meta);
+    return () => meta.remove();
+  }, []);
 
   async function loadProject() {
     try {
@@ -1568,10 +1579,38 @@ function ProjectView() {
     }
   }
 
+  async function loadUnreadCount(pmId) {
+    if (!pmId) return;
+    try {
+      const { supabase } = await import('./supabaseClient');
+      const { data, error } = await supabase
+        .from('pm_messages')
+        .select('id')
+        .eq('pm_id', pmId)
+        .eq('sender', 'admin')
+        .is('read_at', null);
+
+      if (!error && data) {
+        setUnreadCount(data.length);
+      }
+    } catch (err) {
+      console.error('Error loading unread count:', err);
+    }
+  }
+
   useEffect(() => {
     setLoading(true);
     loadProject();
   }, [token]);
+
+  // Load unread count when project loads
+  useEffect(() => {
+    if (project?.propertyManager?.id) {
+      loadUnreadCount(project.propertyManager.id);
+      const interval = setInterval(() => loadUnreadCount(project.propertyManager.id), 30000);
+      return () => clearInterval(interval);
+    }
+  }, [project]);
 
   if (loading) {
     return <div className="loading">Loading project...</div>;
@@ -1653,9 +1692,44 @@ function ProjectView() {
 
       {/* Main Content */}
       <main className="pm-main">
-        <h1 className="pm-main-title">Installation Progress</h1>
-        <PMWelcomeHeader project={project} />
-        <ProjectWidget project={project} showLogo={false} onRefresh={loadProject} />
+        <div className="pm-main-header">
+          <div className="pm-view-toggle">
+            <button
+              className={`pm-toggle-btn ${viewMode === 'progress' ? 'active' : ''}`}
+              onClick={() => setViewMode('progress')}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+              </svg>
+              <span>Installation Progress</span>
+            </button>
+            <button
+              className={`pm-toggle-btn message-btn ${viewMode === 'messages' ? 'active' : ''}`}
+              onClick={() => setViewMode('messages')}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              <span>Message Us</span>
+              {unreadCount > 0 && (
+                <span className="pm-unread-badge">{unreadCount}</span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {viewMode === 'progress' ? (
+          <>
+            <PMWelcomeHeader project={project} />
+            <ProjectWidget project={project} showLogo={false} onRefresh={loadProject} />
+          </>
+        ) : (
+          <PMMessagesView
+            onMessagesRead={() => loadUnreadCount(project.propertyManager?.id)}
+            pmId={project.propertyManager?.id}
+            pmName={project.propertyManager?.name || 'Property Manager'}
+          />
+        )}
       </main>
 
       {/* Send to Phone Modal */}
@@ -1677,6 +1751,7 @@ function PMPortal() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showSendToPhone, setShowSendToPhone] = useState(false);
+  const [viewMode, setViewMode] = useState('progress'); // 'progress' or 'messages'
 
   const currentUrl = window.location.href;
 
@@ -1780,18 +1855,46 @@ function PMPortal() {
 
       {/* Main Content */}
       <main className="pm-main">
-        <h1 className="pm-main-title">Installation Progress</h1>
-        {data.projects.length === 0 ? (
-          <div className="no-projects">
-            <h2>No Active Projects</h2>
-            <p>You don't have any active installation projects at this time.</p>
+        <div className="pm-main-header">
+          <div className="pm-view-toggle">
+            <button
+              className={`pm-toggle-btn ${viewMode === 'progress' ? 'active' : ''}`}
+              onClick={() => setViewMode('progress')}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+              </svg>
+              <span>Installation Progress</span>
+            </button>
+            <button
+              className={`pm-toggle-btn message-btn ${viewMode === 'messages' ? 'active' : ''}`}
+              onClick={() => setViewMode('messages')}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              <span>Message Us</span>
+            </button>
           </div>
+        </div>
+
+        {viewMode === 'progress' ? (
+          <>
+            {data.projects.length === 0 ? (
+              <div className="no-projects">
+                <h2>No Active Projects</h2>
+                <p>You don't have any active installation projects at this time.</p>
+              </div>
+            ) : (
+              data.projects.map(project => (
+                <div key={project.publicToken} id={`property-${project.propertyName}`} className="pm-project-section">
+                  <ProjectWidget project={project} showLogo={false} />
+                </div>
+              ))
+            )}
+          </>
         ) : (
-          data.projects.map(project => (
-            <div key={project.publicToken} id={`property-${project.propertyName}`} className="pm-project-section">
-              <ProjectWidget project={project} showLogo={false} />
-            </div>
-          ))
+          <PMMessagesView pmId={data.propertyManager.id} pmName={data.propertyManager.name} />
         )}
       </main>
 
@@ -1801,6 +1904,166 @@ function PMPortal() {
         onClose={() => setShowSendToPhone(false)}
         url={currentUrl}
       />
+    </div>
+  );
+}
+
+// ============================================
+// PM MESSAGES VIEW
+// ============================================
+function PMMessagesView({ pmId, pmName, onMessagesRead }) {
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    loadMessages();
+    markAsRead();
+    // Poll for new messages every 30 seconds
+    const interval = setInterval(() => {
+      loadMessages();
+      markAsRead();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [pmId]);
+
+  useEffect(() => {
+    // Scroll to bottom when messages change
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  async function markAsRead() {
+    if (!pmId) return;
+    try {
+      const { supabase } = await import('./supabaseClient');
+      await supabase
+        .from('pm_messages')
+        .update({ read_at: new Date().toISOString() })
+        .eq('pm_id', pmId)
+        .eq('sender', 'admin')
+        .is('read_at', null);
+
+      if (onMessagesRead) onMessagesRead();
+    } catch (err) {
+      console.error('Error marking as read:', err);
+    }
+  }
+
+  async function loadMessages() {
+    try {
+      const { supabase } = await import('./supabaseClient');
+      const { data, error } = await supabase
+        .from('pm_messages')
+        .select('*')
+        .eq('pm_id', pmId)
+        .order('created_at', { ascending: true });
+
+      if (!error && data) {
+        setMessages(data);
+      }
+    } catch (err) {
+      console.error('Error loading messages:', err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSend() {
+    if (!newMessage.trim() || !pmId) return;
+
+    setSending(true);
+    try {
+      const { supabase } = await import('./supabaseClient');
+      const { error } = await supabase
+        .from('pm_messages')
+        .insert([{
+          pm_id: pmId,
+          sender: 'pm',
+          sender_name: pmName,
+          message: newMessage.trim()
+        }]);
+
+      if (error) {
+        console.error('Error sending message:', error);
+        alert('Failed to send message. Please try again.');
+      } else {
+        setNewMessage('');
+        loadMessages();
+      }
+    } catch (err) {
+      console.error('Error sending message:', err);
+      alert('Failed to send message. Please try again.');
+    } finally {
+      setSending(false);
+    }
+  }
+
+  const formatTime = (timestamp) => {
+    const date = new Date(timestamp);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+  };
+
+  return (
+    <div className="pm-messages-container">
+      <div className="pm-messages-header">
+        <h2>Messages with Raptor Vending</h2>
+        <p>Send us a message and we'll respond as soon as possible.</p>
+      </div>
+
+      <div className="pm-messages-list">
+        {loading ? (
+          <div className="pm-messages-loading">Loading messages...</div>
+        ) : messages.length === 0 ? (
+          <div className="pm-messages-empty">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="48" height="48">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <p>No messages yet. Start the conversation!</p>
+          </div>
+        ) : (
+          messages.map(msg => (
+            <div key={msg.id} className={`pm-message ${msg.sender === 'pm' ? 'outgoing' : 'incoming'}`}>
+              <div className="pm-message-bubble">
+                <div className="pm-message-text">{msg.message}</div>
+                <div className="pm-message-time">{formatTime(msg.created_at)}</div>
+              </div>
+              <div className="pm-message-sender">
+                {msg.sender === 'pm' ? 'You' : 'Raptor Vending'}
+              </div>
+            </div>
+          ))
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      <div className="pm-messages-input">
+        <textarea
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          placeholder="Type your message..."
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
+        />
+        <button className="pm-message-send-btn" onClick={handleSend} disabled={sending || !newMessage.trim()}>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+          <span>{sending ? 'Sending...' : 'Send'}</span>
+        </button>
+      </div>
     </div>
   );
 }

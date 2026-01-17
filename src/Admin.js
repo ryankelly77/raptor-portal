@@ -48,6 +48,7 @@ export default function Admin() {
   const [projectDetails, setProjectDetails] = useState(null);
   const [showModal, setShowModal] = useState(null);
   const [editItem, setEditItem] = useState(null);
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
 
   function handlePasswordSubmit(e) {
     e.preventDefault();
@@ -63,6 +64,9 @@ export default function Admin() {
   useEffect(() => {
     if (isAuthenticated) {
       loadData();
+      loadUnreadCount();
+      const interval = setInterval(loadUnreadCount, 30000);
+      return () => clearInterval(interval);
     }
   }, [isAuthenticated]);
 
@@ -75,6 +79,22 @@ export default function Admin() {
       console.error('Error loading admin data:', err);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadUnreadCount() {
+    try {
+      const { data, error } = await supabase
+        .from('pm_messages')
+        .select('id')
+        .eq('sender', 'pm')
+        .is('read_at', null);
+
+      if (!error && data) {
+        setUnreadMessageCount(data.length);
+      }
+    } catch (err) {
+      console.error('Error loading unread count:', err);
     }
   }
 
@@ -169,6 +189,15 @@ export default function Admin() {
           >
             Email Templates
           </button>
+          <button
+            className={activeTab === 'messages' ? 'active' : ''}
+            onClick={() => setActiveTab('messages')}
+          >
+            Messages
+            {unreadMessageCount > 0 && (
+              <span className="admin-nav-badge">{unreadMessageCount}</span>
+            )}
+          </button>
         </nav>
         <Link to="/" className="admin-home-link">← Back</Link>
       </header>
@@ -236,6 +265,10 @@ export default function Admin() {
 
         {activeTab === 'emails' && (
           <EmailTemplates />
+        )}
+
+        {activeTab === 'messages' && (
+          <AdminMessagesSection propertyManagers={data.propertyManagers} onUnreadChange={loadUnreadCount} />
         )}
       </main>
 
@@ -3134,6 +3167,296 @@ function EmailTemplates() {
             )}
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// ============================================
+// ADMIN MESSAGES SECTION
+// ============================================
+function AdminMessagesSection({ propertyManagers, onUnreadChange }) {
+  const [conversations, setConversations] = useState([]);
+  const [selectedPM, setSelectedPM] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  // Load all conversations (PMs with messages)
+  useEffect(() => {
+    loadConversations();
+    const interval = setInterval(loadConversations, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Load messages when PM selected and mark as read
+  useEffect(() => {
+    if (selectedPM) {
+      loadMessages(selectedPM.id);
+      markAsRead(selectedPM.id);
+    }
+  }, [selectedPM]);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  async function loadConversations() {
+    try {
+      const { data, error } = await supabase
+        .from('pm_messages')
+        .select('pm_id, created_at, sender, read_at')
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        // Get unique PM IDs with latest message time and unread count
+        const pmMap = new Map();
+        data.forEach(msg => {
+          if (!pmMap.has(msg.pm_id)) {
+            pmMap.set(msg.pm_id, { lastMessage: msg.created_at, unreadCount: 0 });
+          }
+          // Count unread messages from PM (not admin)
+          if (msg.sender === 'pm' && !msg.read_at) {
+            const current = pmMap.get(msg.pm_id);
+            current.unreadCount++;
+          }
+        });
+
+        // Match with property managers
+        const convos = [];
+        pmMap.forEach((info, pmId) => {
+          const pm = propertyManagers.find(p => p.id === pmId);
+          if (pm) {
+            convos.push({ ...pm, lastMessage: info.lastMessage, unreadCount: info.unreadCount });
+          }
+        });
+
+        // Sort by last message
+        convos.sort((a, b) => new Date(b.lastMessage) - new Date(a.lastMessage));
+        setConversations(convos);
+      }
+    } catch (err) {
+      console.error('Error loading conversations:', err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function markAsRead(pmId) {
+    try {
+      await supabase
+        .from('pm_messages')
+        .update({ read_at: new Date().toISOString() })
+        .eq('pm_id', pmId)
+        .eq('sender', 'pm')
+        .is('read_at', null);
+
+      // Refresh conversations to update unread counts
+      loadConversations();
+      // Notify parent to update nav badge
+      if (onUnreadChange) onUnreadChange();
+    } catch (err) {
+      console.error('Error marking as read:', err);
+    }
+  }
+
+  async function loadMessages(pmId) {
+    try {
+      const { data, error } = await supabase
+        .from('pm_messages')
+        .select('*')
+        .eq('pm_id', pmId)
+        .order('created_at', { ascending: true });
+
+      if (!error && data) {
+        setMessages(data);
+      }
+    } catch (err) {
+      console.error('Error loading messages:', err);
+    }
+  }
+
+  async function handleSend() {
+    if (!newMessage.trim() || !selectedPM) return;
+
+    setSending(true);
+    try {
+      const { error } = await supabase
+        .from('pm_messages')
+        .insert([{
+          pm_id: selectedPM.id,
+          sender: 'admin',
+          sender_name: 'Raptor Vending',
+          message: newMessage.trim()
+        }]);
+
+      if (error) {
+        console.error('Error sending message:', error);
+        alert('Failed to send message');
+      } else {
+        setNewMessage('');
+        loadMessages(selectedPM.id);
+        loadConversations();
+      }
+    } catch (err) {
+      console.error('Error sending message:', err);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function handleDelete(msgId) {
+    if (!window.confirm('Delete this message?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('pm_messages')
+        .delete()
+        .eq('id', msgId);
+
+      if (error) {
+        console.error('Error deleting message:', error);
+        alert('Failed to delete message');
+      } else {
+        loadMessages(selectedPM.id);
+        loadConversations();
+      }
+    } catch (err) {
+      console.error('Error deleting message:', err);
+    }
+  }
+
+  async function handleDeleteConversation(pmId) {
+    if (!window.confirm('Delete ALL messages with this property manager?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('pm_messages')
+        .delete()
+        .eq('pm_id', pmId);
+
+      if (error) {
+        console.error('Error deleting conversation:', error);
+        alert('Failed to delete conversation');
+      } else {
+        setSelectedPM(null);
+        setMessages([]);
+        loadConversations();
+        if (onUnreadChange) onUnreadChange();
+      }
+    } catch (err) {
+      console.error('Error deleting conversation:', err);
+    }
+  }
+
+  const formatTime = (timestamp) => {
+    const date = new Date(timestamp);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
+  };
+
+  return (
+    <div className="admin-messages-section">
+      <div className="section-header">
+        <h2>Messages</h2>
+        <button className="btn-secondary" onClick={() => { loadConversations(); if (selectedPM) loadMessages(selectedPM.id); }}>
+          Refresh
+        </button>
+      </div>
+
+      <div className="admin-messages-container">
+        {/* Conversations List */}
+        <div className="admin-conversations-list">
+          <h3>Conversations</h3>
+          {loading ? (
+            <div className="admin-messages-loading">Loading...</div>
+          ) : conversations.length === 0 ? (
+            <div className="admin-messages-empty">No messages yet</div>
+          ) : (
+            conversations.map(pm => (
+              <div
+                key={pm.id}
+                className={`admin-conversation-item ${selectedPM?.id === pm.id ? 'active' : ''} ${pm.unreadCount > 0 ? 'unread' : ''}`}
+                onClick={() => setSelectedPM(pm)}
+              >
+                <div className="admin-conversation-header">
+                  <div className="admin-conversation-name">{pm.name}</div>
+                  {pm.unreadCount > 0 && (
+                    <span className="admin-unread-badge">{pm.unreadCount}</span>
+                  )}
+                </div>
+                <div className="admin-conversation-company">{pm.company}</div>
+                <div className="admin-conversation-time">{formatTime(pm.lastMessage)}</div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Messages Panel */}
+        <div className="admin-messages-panel">
+          {!selectedPM ? (
+            <div className="admin-messages-placeholder">
+              <p>Select a conversation to view messages</p>
+            </div>
+          ) : (
+            <>
+              <div className="admin-messages-header">
+                <div>
+                  <h3>{selectedPM.name}</h3>
+                  <span>{selectedPM.company}</span>
+                </div>
+                <button className="admin-delete-convo-btn" onClick={() => handleDeleteConversation(selectedPM.id)}>
+                  Delete All
+                </button>
+              </div>
+
+              <div className="admin-messages-list">
+                {messages.map(msg => (
+                  <div key={msg.id} className={`admin-message ${msg.sender === 'admin' ? 'outgoing' : 'incoming'}`}>
+                    <div className="admin-message-bubble">
+                      <div className="admin-message-text">{msg.message}</div>
+                      <div className="admin-message-time">{formatTime(msg.created_at)}</div>
+                    </div>
+                    <div className="admin-message-footer">
+                      <span className="admin-message-sender">
+                        {msg.sender === 'admin' ? 'Raptor Vending' : msg.sender_name || 'Property Manager'}
+                      </span>
+                      <button className="admin-message-delete" onClick={() => handleDelete(msg.id)} title="Delete message">
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+
+              <div className="admin-messages-input">
+                <textarea
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Type your reply..."
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSend();
+                    }
+                  }}
+                />
+                <button onClick={handleSend} disabled={sending || !newMessage.trim()}>
+                  {sending ? 'Sending...' : 'Send'}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

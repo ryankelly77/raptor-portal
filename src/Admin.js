@@ -2465,12 +2465,51 @@ function ManagersList({ managers, onRefresh }) {
   const [editingManager, setEditingManager] = useState(null);
 
   async function handleCreate(data) {
+    // Sync with HighLevel first
+    try {
+      const hlResponse = await fetch('/api/sync-highlevel-contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          phone: data.phone
+        })
+      });
+      const hlResult = await hlResponse.json();
+      if (hlResult.contactId) {
+        data.highlevel_contact_id = hlResult.contactId;
+      }
+    } catch (err) {
+      console.error('HighLevel sync failed:', err);
+      // Continue anyway - PM will be created without HighLevel link
+    }
+
     await createPropertyManager(data);
     onRefresh();
     setShowNew(false);
   }
 
   async function handleUpdate(data) {
+    // Sync with HighLevel
+    try {
+      const hlResponse = await fetch('/api/sync-highlevel-contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          phone: data.phone
+        })
+      });
+      const hlResult = await hlResponse.json();
+      if (hlResult.contactId) {
+        data.highlevel_contact_id = hlResult.contactId;
+      }
+    } catch (err) {
+      console.error('HighLevel sync failed:', err);
+    }
+
     await updatePropertyManager(editingManager.id, data);
     onRefresh();
     setEditingManager(null);

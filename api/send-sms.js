@@ -31,20 +31,37 @@ export default async function handler(req, res) {
   };
 
   try {
-    // Step 1: Look up existing contact by phone number
-    const searchResponse = await fetch(
-      `https://services.leadconnectorhq.com/contacts/search?query=${encodeURIComponent(formattedPhone)}&locationId=${HIGHLEVEL_LOCATION_ID}`,
-      { headers }
-    );
-    const searchResult = await searchResponse.json();
-
     let contactId;
 
-    if (searchResult.contacts && searchResult.contacts.length > 0) {
-      // Use existing contact
-      contactId = searchResult.contacts[0].id;
-    } else {
-      // Step 2: Create new contact if not found
+    // Step 1: Look up existing contact by phone number
+    const searchResponse = await fetch(
+      `https://services.leadconnectorhq.com/contacts/lookup?phone=${encodeURIComponent(formattedPhone)}&locationId=${HIGHLEVEL_LOCATION_ID}`,
+      { headers }
+    );
+
+    if (searchResponse.ok) {
+      const searchResult = await searchResponse.json();
+      if (searchResult.contact?.id) {
+        contactId = searchResult.contact.id;
+      }
+    }
+
+    // Step 2: If lookup failed, try search
+    if (!contactId) {
+      const altSearchResponse = await fetch(
+        `https://services.leadconnectorhq.com/contacts/?locationId=${HIGHLEVEL_LOCATION_ID}&query=${encodeURIComponent(formattedPhone)}`,
+        { headers }
+      );
+      if (altSearchResponse.ok) {
+        const altResult = await altSearchResponse.json();
+        if (altResult.contacts && altResult.contacts.length > 0) {
+          contactId = altResult.contacts[0].id;
+        }
+      }
+    }
+
+    // Step 3: Create new contact if still not found
+    if (!contactId) {
       const createResponse = await fetch(
         'https://services.leadconnectorhq.com/contacts/',
         {
@@ -60,11 +77,27 @@ export default async function handler(req, res) {
       const createResult = await createResponse.json();
 
       if (!createResponse.ok) {
-        console.error('Create contact error:', createResult);
-        throw new Error(createResult.message || 'Failed to create contact');
-      }
+        // If duplicate error, try one more lookup
+        if (createResult.message?.includes('duplicate')) {
+          const retrySearch = await fetch(
+            `https://services.leadconnectorhq.com/contacts/?locationId=${HIGHLEVEL_LOCATION_ID}&phone=${encodeURIComponent(formattedPhone)}`,
+            { headers }
+          );
+          if (retrySearch.ok) {
+            const retryResult = await retrySearch.json();
+            if (retryResult.contacts && retryResult.contacts.length > 0) {
+              contactId = retryResult.contacts[0].id;
+            }
+          }
+        }
 
-      contactId = createResult.contact?.id;
+        if (!contactId) {
+          console.error('Create contact error:', createResult);
+          throw new Error(createResult.message || 'Failed to create contact');
+        }
+      } else {
+        contactId = createResult.contact?.id;
+      }
     }
 
     if (!contactId) {

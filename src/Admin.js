@@ -66,7 +66,9 @@ export default function Admin() {
   const [authLoading, setAuthLoading] = useState(false);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('projects');
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('adminActiveTab') || 'projects';
+  });
   const [selectedProject, setSelectedProject] = useState(null);
   const [projectDetails, setProjectDetails] = useState(null);
   const [showModal, setShowModal] = useState(null);
@@ -110,6 +112,11 @@ export default function Admin() {
       return () => clearInterval(interval);
     }
   }, [isAuthenticated]);
+
+  // Persist active tab to localStorage
+  useEffect(() => {
+    localStorage.setItem('adminActiveTab', activeTab);
+  }, [activeTab]);
 
   async function loadData() {
     try {
@@ -1915,8 +1922,18 @@ function NewProjectModal({ locations, properties, onClose, onSave }) {
       // Generate a survey token
       const surveyToken = Math.random().toString(36).substring(2, 15);
 
+      // Find the property manager based on the selected location's property
+      const selectedLocation = locations.find(l => l.id === form.location_id);
+      const selectedProperty = selectedLocation ? properties.find(p => p.id === selectedLocation.property_id) : null;
+      const propertyManagerId = selectedProperty?.property_manager_id || null;
+
       // Create the project first
-      const projectData = { ...form, configuration: buildConfiguration(), survey_token: surveyToken };
+      const projectData = {
+        ...form,
+        configuration: buildConfiguration(),
+        survey_token: surveyToken,
+        property_manager_id: propertyManagerId
+      };
       const newProject = await createProject(projectData);
       console.log('Created project:', newProject);
 
@@ -2157,7 +2174,7 @@ function PropertiesList({ properties, locations, managers, onRefresh }) {
 
   async function handleCreateProperty(data) {
     await createProperty(data);
-    onRefresh();
+    await onRefresh();
     setShowNewProperty(false);
   }
 
@@ -2305,39 +2322,53 @@ function PropertyForm({ managers, initialData, onSave, onCancel }) {
     total_employees: initialData?.total_employees || 0,
     property_manager_id: initialData?.property_manager_id || ''
   });
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!form.name || saving) return;
+    setSaving(true);
+    try {
+      await onSave(form);
+    } catch (err) {
+      console.error('Error saving property:', err);
+      alert('Error saving property: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <>
       <div className="form-group">
         <label>Property Name</label>
-        <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+        <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} disabled={saving} />
       </div>
       <div className="form-group">
         <label>Address</label>
-        <input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} />
+        <input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} disabled={saving} />
       </div>
       <div className="form-row three-col">
         <div className="form-group">
           <label>City</label>
-          <input value={form.city} onChange={e => setForm({ ...form, city: e.target.value })} />
+          <input value={form.city} onChange={e => setForm({ ...form, city: e.target.value })} disabled={saving} />
         </div>
         <div className="form-group">
           <label>State</label>
-          <input value={form.state} onChange={e => setForm({ ...form, state: e.target.value })} />
+          <input value={form.state} onChange={e => setForm({ ...form, state: e.target.value })} disabled={saving} />
         </div>
         <div className="form-group">
           <label>ZIP</label>
-          <input value={form.zip} onChange={e => setForm({ ...form, zip: e.target.value })} />
+          <input value={form.zip} onChange={e => setForm({ ...form, zip: e.target.value })} disabled={saving} />
         </div>
       </div>
       <div className="form-row two-col">
         <div className="form-group">
           <label>Est Headcount</label>
-          <input type="number" value={form.total_employees} onChange={e => setForm({ ...form, total_employees: parseInt(e.target.value) || 0 })} />
+          <input type="number" value={form.total_employees} onChange={e => setForm({ ...form, total_employees: parseInt(e.target.value) || 0 })} disabled={saving} />
         </div>
         <div className="form-group">
           <label>Property Manager</label>
-          <select value={form.property_manager_id} onChange={e => setForm({ ...form, property_manager_id: e.target.value })}>
+          <select value={form.property_manager_id} onChange={e => setForm({ ...form, property_manager_id: e.target.value })} disabled={saving}>
             <option value="">Select...</option>
             {managers.map(m => (
               <option key={m.id} value={m.id}>{m.name} - {m.company}</option>
@@ -2346,9 +2377,9 @@ function PropertyForm({ managers, initialData, onSave, onCancel }) {
         </div>
       </div>
       <div className="modal-actions">
-        <button className="btn-cancel" onClick={onCancel}>Cancel</button>
-        <button className="btn-primary" onClick={() => form.name && onSave(form)}>
-          {initialData ? 'Save' : 'Create'}
+        <button className="btn-cancel" onClick={onCancel} disabled={saving}>Cancel</button>
+        <button className="btn-primary" onClick={handleSubmit} disabled={saving}>
+          {saving ? 'Saving...' : (initialData ? 'Save' : 'Create')}
         </button>
       </div>
     </>

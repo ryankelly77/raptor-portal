@@ -1922,17 +1922,11 @@ function NewProjectModal({ locations, properties, onClose, onSave }) {
       // Generate a survey token
       const surveyToken = Math.random().toString(36).substring(2, 15);
 
-      // Find the property manager based on the selected location's property
-      const selectedLocation = locations.find(l => l.id === form.location_id);
-      const selectedProperty = selectedLocation ? properties.find(p => p.id === selectedLocation.property_id) : null;
-      const propertyManagerId = selectedProperty?.property_manager_id || null;
-
-      // Create the project first
+      // Create the project (PM is derived from location -> property -> property_manager when needed)
       const projectData = {
         ...form,
         configuration: buildConfiguration(),
-        survey_token: surveyToken,
-        property_manager_id: propertyManagerId
+        survey_token: surveyToken
       };
       const newProject = await createProject(projectData);
       console.log('Created project:', newProject);

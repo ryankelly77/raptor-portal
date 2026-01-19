@@ -10,7 +10,7 @@ const { isValidId, isNonEmptyString, isValidEmail } = require('../lib/validate')
 const TABLE_CONFIG = {
   projects: {
     allowedFields: [
-      'location_id', 'property_manager_id', 'project_number', 'public_token', 'is_active',
+      'location_id', 'project_number', 'public_token', 'is_active',
       'overall_progress', 'estimated_completion', 'configuration',
       'employee_count', 'email_reminders_enabled', 'reminder_email',
       'last_reminder_sent', 'survey_clicks'

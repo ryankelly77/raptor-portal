@@ -543,24 +543,34 @@ export async function fetchProjectDetails(projectId) {
 // SURVEY TRACKING
 // ============================================
 export async function recordSurveyClick(surveyToken) {
-  // First get current click count
-  const { data: project, error: fetchError } = await supabase
-    .from('projects')
-    .select('id, survey_clicks')
-    .eq('survey_token', surveyToken)
-    .single();
+  // Use API endpoint to bypass RLS
+  const response = await fetch('/api/survey-track', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ surveyToken, action: 'click' })
+  });
 
-  if (fetchError || !project) {
-    throw new Error('Survey not found');
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.error || 'Failed to record survey click');
   }
 
-  // Increment click count
-  const { error: updateError } = await supabase
-    .from('projects')
-    .update({ survey_clicks: (project.survey_clicks || 0) + 1 })
-    .eq('id', project.id);
+  return true;
+}
 
-  if (updateError) throw updateError;
+export async function recordSurveyCompletion(surveyToken) {
+  // Use API endpoint to bypass RLS
+  const response = await fetch('/api/survey-track', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ surveyToken, action: 'complete' })
+  });
+
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.error || 'Failed to record survey completion');
+  }
+
   return true;
 }
 

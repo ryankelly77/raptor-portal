@@ -126,6 +126,7 @@ module.exports = async function handler(req, res) {
 
   // 3. Parse request
   const { table, action, data, id, filters } = req.body || {};
+  console.log('[CRUD REQUEST]', JSON.stringify({ table, action, id, filters, dataKeys: data ? Object.keys(data) : null }));
 
   // Validate table
   if (!table || !TABLE_CONFIG[table]) {
@@ -217,13 +218,17 @@ module.exports = async function handler(req, res) {
           insertData.is_active = insertData.is_active !== false;
         }
 
+        console.log(`[CRUD CREATE] Table: ${table}, Data:`, JSON.stringify(insertData));
         const { data: created, error } = await supabase
           .from(table)
           .insert([insertData])
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error(`[CRUD CREATE ERROR] Table: ${table}, Error:`, error.message, 'Data:', JSON.stringify(insertData));
+          throw error;
+        }
         return res.status(201).json({ data: created });
       }
 
@@ -275,7 +280,17 @@ module.exports = async function handler(req, res) {
         return res.status(400).json({ error: 'Invalid action' });
     }
   } catch (error) {
-    console.error(`Admin CRUD error [${table}/${action}]:`, error.message);
-    return res.status(500).json({ error: error.message });
+    console.error(`Admin CRUD error [${table}/${action}]:`, {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+      requestData: JSON.stringify({ table, action, id, data: data ? Object.keys(data) : null })
+    });
+    return res.status(500).json({
+      error: error.message,
+      details: error.details || null,
+      hint: error.hint || null
+    });
   }
 };

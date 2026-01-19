@@ -13,7 +13,7 @@ const TABLE_CONFIG = {
       'location_id', 'project_number', 'public_token', 'is_active',
       'overall_progress', 'estimated_completion', 'configuration',
       'employee_count', 'email_reminders_enabled', 'reminder_email',
-      'last_reminder_sent', 'survey_clicks'
+      'last_reminder_sent', 'survey_clicks', 'survey_completions'
     ],
     requiredForCreate: ['location_id'],
     orderBy: { column: 'created_at', ascending: false }

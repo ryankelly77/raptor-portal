@@ -15,6 +15,11 @@ async function handleResponse(response) {
   if (!response.ok) {
     if (response.status === 401) {
       console.error('Admin session expired or invalid');
+      // Clear session and redirect to login
+      sessionStorage.removeItem('adminAuth');
+      sessionStorage.removeItem('adminToken');
+      alert('Session expired. Please log in again.');
+      window.location.reload();
     }
     throw new Error(data.error || `HTTP ${response.status}`);
   }

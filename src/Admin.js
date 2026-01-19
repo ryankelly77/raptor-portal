@@ -1919,6 +1919,7 @@ function NewProjectModal({ locations, properties, onClose, onSave }) {
   const handleSave = async () => {
     if (!form.location_id || saving) return;
 
+    console.log('NewProjectModal: Setting saving to true');
     setSaving(true);
     try {
       // Generate a survey token
@@ -2147,10 +2148,31 @@ function NewProjectModal({ locations, properties, onClose, onSave }) {
         </div>
 
         {saving && (
-          <div className="saving-overlay">
-            <div className="saving-spinner"></div>
-            <p>Creating Install...</p>
-            <p className="saving-subtext">Setting up phases and tasks</p>
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(255, 255, 255, 0.95)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10,
+            borderRadius: '12px'
+          }}>
+            <div style={{
+              width: '48px',
+              height: '48px',
+              border: '4px solid #e5e5e5',
+              borderTopColor: '#f97316',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              marginBottom: '16px'
+            }}></div>
+            <p style={{ margin: 0, fontSize: '18px', fontWeight: 600, color: '#333' }}>Creating Install...</p>
+            <p style={{ fontSize: '14px', color: '#666', marginTop: '8px' }}>Setting up phases and tasks</p>
           </div>
         )}
         <div className="modal-actions">

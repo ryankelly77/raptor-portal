@@ -142,10 +142,13 @@ function TaskItem({ task, globalDocuments, readOnly = false }) {
     return null;
   }
 
-  // Hide PM tasks from regular task list (shown in PM Action Items section)
-  if (task.label.startsWith('[PM-TEXT]') || task.label.startsWith('[PM]')) {
+  // Hide PM-TEXT tasks (shown in PM Action Items section with text input)
+  if (task.label.startsWith('[PM-TEXT]')) {
     return null;
   }
+
+  // Check if this is a PM task (Property Manager checks it off)
+  const isPmTask = task.label.startsWith('[PM]') || task.label.startsWith('[PM-DATE]');
 
   // Clean up label by removing prefixes
   let displayLabel = task.label
@@ -235,6 +238,7 @@ function TaskItem({ task, globalDocuments, readOnly = false }) {
       </div>
       <div className="subtask-content">
         <span className="subtask-label">
+          {isPmTask && <span className="pm-badge">[PM]</span>}
           {isCOITask && hasDocData ? (
             readOnly ? (
               <span

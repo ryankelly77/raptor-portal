@@ -1,7 +1,7 @@
 // Vercel Serverless Function for sending SMS via HighLevel
 
-import { validatePhone, isValidUrl, isNonEmptyString } from './lib/validate.js';
-import { requireAdmin } from './lib/auth.js';
+import { validatePhone, isValidUrl, isNonEmptyString } from './lib/validate';
+import { requireAdmin } from './lib/auth';
 
 export default async function handler(req, res) {
   // 1. Method validation

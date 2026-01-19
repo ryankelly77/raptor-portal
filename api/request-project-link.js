@@ -1,7 +1,7 @@
 // Public API endpoint for "Text me a link" feature
 // Rate limited, hardcoded message template - no admin auth required
 
-import { validatePhone, isValidUrl, isNonEmptyString } from './lib/validate.js';
+import { validatePhone, isValidUrl, isNonEmptyString } from './lib/validate';
 
 // Rate limiting (same approach as admin-auth)
 const rateLimitStore = new Map();

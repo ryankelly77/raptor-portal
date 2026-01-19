@@ -1,7 +1,7 @@
 // Vercel Serverless Function for syncing contacts with HighLevel
 
-import { isNonEmptyString, isValidEmail, validatePhone } from './lib/validate.js';
-import { requireAdmin } from './lib/auth.js';
+import { isNonEmptyString, isValidEmail, validatePhone } from './lib/validate';
+import { requireAdmin } from './lib/auth';
 
 export default async function handler(req, res) {
   // 1. Method validation

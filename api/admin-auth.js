@@ -2,8 +2,8 @@
 // Validates admin password server-side to prevent client-side bypass
 
 import crypto from 'crypto';
-import { isNonEmptyString } from './lib/validate.js';
-import { createAdminToken } from './lib/auth.js';
+import { isNonEmptyString } from './lib/validate';
+import { createAdminToken } from './lib/auth';
 
 // ============================================
 // RATE LIMITING

@@ -1,9 +1,9 @@
 // Admin API for phases CRUD operations
 // Requires valid admin JWT token
 
-import { requireAdmin } from '../lib/auth.js';
-import { getSupabaseAdmin } from '../lib/supabase-admin.js';
-import { isValidId, isNonEmptyString } from '../lib/validate.js';
+import { requireAdmin } from '../lib/auth';
+import { getSupabaseAdmin } from '../lib/supabase-admin';
+import { isValidId, isNonEmptyString } from '../lib/validate';
 
 export default async function handler(req, res) {
   // 1. Admin authentication

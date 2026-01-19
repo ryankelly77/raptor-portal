@@ -1,8 +1,8 @@
 // Vercel Serverless Function for sending delivery notification emails via Mailgun
 
 import { createClient } from '@supabase/supabase-js';
-import { isNonEmptyString, isValidId } from './lib/validate.js';
-import { requireAdmin } from './lib/auth.js';
+import { isNonEmptyString, isValidId } from './lib/validate';
+import { requireAdmin } from './lib/auth';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL,

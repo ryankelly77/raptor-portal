@@ -1,7 +1,7 @@
 // Vercel Serverless Function for sending email reminders via Mailgun
 // Triggered by Vercel Cron or manual API call
 
-import { createClient } from '@supabase/supabase-js';
+const { createClient } = require('@supabase/supabase-js');
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL,
@@ -121,7 +121,7 @@ function generateReminderEmail(project, allTasks, incompleteCount, propertyName,
   `;
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Verify cron secret for all calls - no bypass allowed
   const cronSecret = req.headers['x-cron-secret'] || req.headers.authorization?.replace('Bearer ', '');
   if (!process.env.CRON_SECRET) {
@@ -255,4 +255,4 @@ export default async function handler(req, res) {
     console.error('Reminder error:', error);
     return res.status(500).json({ error: error.message });
   }
-}
+};

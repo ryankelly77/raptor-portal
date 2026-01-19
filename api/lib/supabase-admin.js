@@ -1,11 +1,11 @@
 // Supabase client with service role key for admin operations
 // ONLY use this in authenticated API routes behind requireAdmin()
 
-import { createClient } from '@supabase/supabase-js';
+const { createClient } = require('@supabase/supabase-js');
 
 let supabaseAdmin = null;
 
-export function getSupabaseAdmin() {
+function getSupabaseAdmin() {
   if (supabaseAdmin) return supabaseAdmin;
 
   const url = process.env.SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL;
@@ -24,3 +24,5 @@ export function getSupabaseAdmin() {
 
   return supabaseAdmin;
 }
+
+module.exports = { getSupabaseAdmin };

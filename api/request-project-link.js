@@ -1,7 +1,7 @@
 // Public API endpoint for "Text me a link" feature
 // Rate limited, hardcoded message template - no admin auth required
 
-import { validatePhone, isValidUrl, isNonEmptyString } from './lib/validate';
+const { validatePhone, isValidUrl, isNonEmptyString } = require('./lib/validate');
 
 // Rate limiting (same approach as admin-auth)
 const rateLimitStore = new Map();
@@ -32,7 +32,7 @@ function checkRateLimit(ip) {
   return { allowed: true, remaining: MAX_REQUESTS - record.count };
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // 1. Method validation
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -177,4 +177,4 @@ export default async function handler(req, res) {
     console.error('Request project link error:', error.message);
     return res.status(500).json({ error: 'Failed to send SMS' });
   }
-}
+};

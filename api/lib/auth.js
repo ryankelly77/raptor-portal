@@ -1,40 +1,41 @@
-// JWT authentication utilities using jose library
+// JWT authentication utilities using jsonwebtoken library
 
-import { SignJWT, jwtVerify } from 'jose';
+const jwt = require('jsonwebtoken');
 
 const JWT_EXPIRATION = '8h'; // Token expires in 8 hours
 
 /**
- * Get the JWT secret as a Uint8Array (required by jose)
- * @returns {Uint8Array}
+ * Get the JWT secret
+ * @returns {string}
  */
 function getJwtSecret() {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
     throw new Error('JWT_SECRET not configured');
   }
-  // jose requires the secret as Uint8Array
-  return new TextEncoder().encode(secret);
+  return secret;
 }
 
 /**
  * Create a signed JWT for admin authentication
  * @param {Object} payload - Data to include in the token
- * @returns {Promise<string>} - Signed JWT
+ * @returns {string} - Signed JWT
  */
-export async function createAdminToken(payload = {}) {
+function createAdminToken(payload = {}) {
   const secret = getJwtSecret();
 
-  const token = await new SignJWT({
-    ...payload,
-    role: 'admin'
-  })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime(JWT_EXPIRATION)
-    .setIssuer('raptor-portal')
-    .setAudience('raptor-admin')
-    .sign(secret);
+  const token = jwt.sign(
+    {
+      ...payload,
+      role: 'admin'
+    },
+    secret,
+    {
+      expiresIn: JWT_EXPIRATION,
+      issuer: 'raptor-portal',
+      audience: 'raptor-admin'
+    }
+  );
 
   return token;
 }
@@ -42,13 +43,13 @@ export async function createAdminToken(payload = {}) {
 /**
  * Verify a JWT and return the payload
  * @param {string} token - JWT to verify
- * @returns {Promise<Object>} - Decoded payload
+ * @returns {Object} - Decoded payload
  * @throws {Error} - If token is invalid or expired
  */
-export async function verifyAdminToken(token) {
+function verifyAdminToken(token) {
   const secret = getJwtSecret();
 
-  const { payload } = await jwtVerify(token, secret, {
+  const payload = jwt.verify(token, secret, {
     issuer: 'raptor-portal',
     audience: 'raptor-admin'
   });
@@ -65,7 +66,7 @@ export async function verifyAdminToken(token) {
  * @param {Object} req - Request object
  * @returns {string|null} - JWT or null if not found
  */
-export function extractToken(req) {
+function extractToken(req) {
   const authHeader = req.headers.authorization || req.headers.Authorization;
 
   if (!authHeader) {
@@ -85,9 +86,9 @@ export function extractToken(req) {
  * Middleware to require admin authentication
  * Returns { authenticated: true, payload } or { authenticated: false, error, status }
  * @param {Object} req - Request object
- * @returns {Promise<Object>}
+ * @returns {Object}
  */
-export async function requireAdmin(req) {
+function requireAdmin(req) {
   // Check if JWT_SECRET is configured
   if (!process.env.JWT_SECRET) {
     console.error('JWT_SECRET not configured');
@@ -109,14 +110,14 @@ export async function requireAdmin(req) {
   }
 
   try {
-    const payload = await verifyAdminToken(token);
+    const payload = verifyAdminToken(token);
     return {
       authenticated: true,
       payload
     };
   } catch (err) {
     // Differentiate between expired and invalid tokens
-    if (err.code === 'ERR_JWT_EXPIRED') {
+    if (err.name === 'TokenExpiredError') {
       return {
         authenticated: false,
         error: 'Token expired. Please log in again.',
@@ -132,3 +133,10 @@ export async function requireAdmin(req) {
     };
   }
 }
+
+module.exports = {
+  createAdminToken,
+  verifyAdminToken,
+  extractToken,
+  requireAdmin
+};

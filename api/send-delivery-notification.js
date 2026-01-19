@@ -1,8 +1,8 @@
 // Vercel Serverless Function for sending delivery notification emails via Mailgun
 
-import { createClient } from '@supabase/supabase-js';
-import { isNonEmptyString, isValidId } from './lib/validate';
-import { requireAdmin } from './lib/auth';
+const { createClient } = require('@supabase/supabase-js');
+const { isNonEmptyString, isValidId } = require('./lib/validate');
+const { requireAdmin } = require('./lib/auth');
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL,
@@ -131,7 +131,7 @@ function generateDeliveryEmail(delivery, propertyName, projectToken, firstName) 
   `;
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // 1. Method validation
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -233,4 +233,4 @@ export default async function handler(req, res) {
     console.error('Delivery notification error:', error);
     return res.status(500).json({ error: error.message });
   }
-}
+};

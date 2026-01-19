@@ -3,14 +3,14 @@
 /**
  * Validate that a value is a non-empty string
  */
-export function isNonEmptyString(value) {
+function isNonEmptyString(value) {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
 /**
  * Validate email format
  */
-export function isValidEmail(email) {
+function isValidEmail(email) {
   if (!isNonEmptyString(email)) return false;
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
@@ -20,7 +20,7 @@ export function isValidEmail(email) {
  * Validate phone number (10 digits after stripping non-digits)
  * Returns formatted phone or null if invalid
  */
-export function validatePhone(phone) {
+function validatePhone(phone) {
   if (!isNonEmptyString(phone)) return null;
   const digits = phone.replace(/\D/g, '');
   if (digits.length !== 10) return null;
@@ -30,7 +30,7 @@ export function validatePhone(phone) {
 /**
  * Validate URL format
  */
-export function isValidUrl(url) {
+function isValidUrl(url) {
   if (!isNonEmptyString(url)) return false;
   try {
     const parsed = new URL(url);
@@ -44,7 +44,7 @@ export function isValidUrl(url) {
  * Validate request body has required fields
  * Returns { valid: true } or { valid: false, error: string }
  */
-export function validateRequired(body, fields) {
+function validateRequired(body, fields) {
   if (!body || typeof body !== 'object') {
     return { valid: false, error: 'Request body is required' };
   }
@@ -61,7 +61,7 @@ export function validateRequired(body, fields) {
 /**
  * Validate integer ID
  */
-export function isValidId(id) {
+function isValidId(id) {
   if (typeof id === 'number') return Number.isInteger(id) && id > 0;
   if (typeof id === 'string') {
     const num = parseInt(id, 10);
@@ -73,8 +73,18 @@ export function isValidId(id) {
 /**
  * Sanitize string for safe logging (truncate and remove sensitive patterns)
  */
-export function sanitizeForLog(value, maxLength = 100) {
+function sanitizeForLog(value, maxLength = 100) {
   if (!isNonEmptyString(value)) return '[empty]';
   const sanitized = value.slice(0, maxLength);
   return sanitized.length < value.length ? `${sanitized}...` : sanitized;
 }
+
+module.exports = {
+  isNonEmptyString,
+  isValidEmail,
+  validatePhone,
+  isValidUrl,
+  validateRequired,
+  isValidId,
+  sanitizeForLog
+};

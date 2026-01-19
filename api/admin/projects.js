@@ -1,11 +1,11 @@
 // Admin API for projects CRUD operations
 // Requires valid admin JWT token
 
-import { requireAdmin } from '../lib/auth';
-import { getSupabaseAdmin } from '../lib/supabase-admin';
-import { isValidId, isNonEmptyString } from '../lib/validate';
+const { requireAdmin } = require('../lib/auth');
+const { getSupabaseAdmin } = require('../lib/supabase-admin');
+const { isValidId, isNonEmptyString } = require('../lib/validate');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // 1. Admin authentication
   const auth = await requireAdmin(req);
   if (!auth.authenticated) {
@@ -128,7 +128,7 @@ export default async function handler(req, res) {
     console.error('Projects API error:', error.message);
     return res.status(500).json({ error: error.message });
   }
-}
+};
 
 // Generate a random public token
 function generateToken() {

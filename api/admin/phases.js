@@ -1,11 +1,11 @@
-// Admin API for tasks CRUD operations
+// Admin API for phases CRUD operations
 // Requires valid admin JWT token
 
-import { requireAdmin } from '../lib/auth';
-import { getSupabaseAdmin } from '../lib/supabase-admin';
-import { isValidId, isNonEmptyString } from '../lib/validate';
+const { requireAdmin } = require('../lib/auth');
+const { getSupabaseAdmin } = require('../lib/supabase-admin');
+const { isValidId, isNonEmptyString } = require('../lib/validate');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // 1. Admin authentication
   const auth = await requireAdmin(req);
   if (!auth.authenticated) {
@@ -26,16 +26,16 @@ export default async function handler(req, res) {
   try {
     switch (method) {
       case 'GET': {
-        // GET /api/admin/tasks?phase_id=123 - list tasks for phase
-        // GET /api/admin/tasks?id=123 - get single task
-        const { id, phase_id } = req.query;
+        // GET /api/admin/phases?project_id=123 - list phases for project
+        // GET /api/admin/phases?id=123 - get single phase
+        const { id, project_id } = req.query;
 
         if (id) {
           if (!isValidId(id)) {
-            return res.status(400).json({ error: 'Invalid task ID' });
+            return res.status(400).json({ error: 'Invalid phase ID' });
           }
           const { data, error } = await supabase
-            .from('tasks')
+            .from('phases')
             .select('*')
             .eq('id', id)
             .single();
@@ -44,45 +44,45 @@ export default async function handler(req, res) {
           return res.status(200).json({ data });
         }
 
-        if (phase_id) {
-          if (!isValidId(phase_id)) {
-            return res.status(400).json({ error: 'Invalid phase_id' });
+        if (project_id) {
+          if (!isValidId(project_id)) {
+            return res.status(400).json({ error: 'Invalid project_id' });
           }
           const { data, error } = await supabase
-            .from('tasks')
+            .from('phases')
             .select('*')
-            .eq('phase_id', phase_id)
-            .order('sort_order', { ascending: true });
+            .eq('project_id', project_id)
+            .order('phase_number', { ascending: true });
 
           if (error) throw error;
           return res.status(200).json({ data });
         }
 
-        return res.status(400).json({ error: 'phase_id or id required' });
+        return res.status(400).json({ error: 'project_id or id required' });
       }
 
       case 'POST': {
-        // POST /api/admin/tasks - create new task
-        const { phase_id, label, ...rest } = req.body || {};
+        // POST /api/admin/phases - create new phase
+        const { project_id, title, phase_number, ...rest } = req.body || {};
 
-        if (!isValidId(phase_id)) {
-          return res.status(400).json({ error: 'Valid phase_id is required' });
+        if (!isValidId(project_id)) {
+          return res.status(400).json({ error: 'Valid project_id is required' });
         }
 
-        if (!isNonEmptyString(label)) {
-          return res.status(400).json({ error: 'Label is required' });
+        if (!isNonEmptyString(title)) {
+          return res.status(400).json({ error: 'Title is required' });
         }
 
         const insertData = {
-          phase_id: parseInt(phase_id, 10),
-          label,
-          completed: false,
-          sort_order: rest.sort_order || 0,
-          ...sanitizeTaskFields(rest)
+          project_id: parseInt(project_id, 10),
+          title,
+          phase_number: phase_number || 1,
+          status: 'not_started',
+          ...sanitizePhaseFields(rest)
         };
 
         const { data, error } = await supabase
-          .from('tasks')
+          .from('phases')
           .insert([insertData])
           .select()
           .single();
@@ -92,20 +92,20 @@ export default async function handler(req, res) {
       }
 
       case 'PUT': {
-        // PUT /api/admin/tasks - update task
+        // PUT /api/admin/phases - update phase
         const { id, ...updates } = req.body || {};
 
         if (!isValidId(id)) {
-          return res.status(400).json({ error: 'Valid task ID is required' });
+          return res.status(400).json({ error: 'Valid phase ID is required' });
         }
 
         const updateData = {
-          ...sanitizeTaskFields(updates),
+          ...sanitizePhaseFields(updates),
           updated_at: new Date().toISOString()
         };
 
         const { data, error } = await supabase
-          .from('tasks')
+          .from('phases')
           .update(updateData)
           .eq('id', id)
           .select()
@@ -116,15 +116,15 @@ export default async function handler(req, res) {
       }
 
       case 'DELETE': {
-        // DELETE /api/admin/tasks?id=123
+        // DELETE /api/admin/phases?id=123
         const { id } = req.query;
 
         if (!isValidId(id)) {
-          return res.status(400).json({ error: 'Valid task ID is required' });
+          return res.status(400).json({ error: 'Valid phase ID is required' });
         }
 
         const { error } = await supabase
-          .from('tasks')
+          .from('phases')
           .delete()
           .eq('id', id);
 
@@ -137,19 +137,20 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: `Method ${method} not allowed` });
     }
   } catch (error) {
-    console.error('Tasks API error:', error.message);
+    console.error('Phases API error:', error.message);
     return res.status(500).json({ error: error.message });
   }
-}
+};
 
-// Sanitize and validate task fields
-function sanitizeTaskFields(fields) {
+// Sanitize and validate phase fields
+function sanitizePhaseFields(fields) {
   const allowed = [
-    'label', 'completed', 'sort_order', 'scheduled_date',
-    'upload_speed', 'download_speed', 'enclosure_type',
-    'enclosure_color', 'custom_color_name', 'smartfridge_qty',
-    'smartcooker_qty', 'deliveries', 'document_url', 'notes',
-    'pm_text_response'
+    'title', 'phase_number', 'status', 'description',
+    'start_date', 'end_date', 'is_approximate',
+    'property_responsibility', 'contractor_name',
+    'contractor_scheduled_date', 'contractor_status',
+    'survey_response_rate', 'survey_top_meals',
+    'survey_top_snacks', 'survey_dietary_notes'
   ];
 
   const sanitized = {};

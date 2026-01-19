@@ -1,9 +1,9 @@
 // Vercel Serverless Function for sending SMS via HighLevel
 
-import { validatePhone, isValidUrl, isNonEmptyString } from './lib/validate';
-import { requireAdmin } from './lib/auth';
+const { validatePhone, isValidUrl, isNonEmptyString } = require('./lib/validate');
+const { requireAdmin } = require('./lib/auth');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // 1. Method validation
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -62,9 +62,9 @@ export default async function handler(req, res) {
     ];
 
     // Step 1: Try lookup endpoint with different formats
-    for (const phone of phoneFormats) {
+    for (const phoneFormat of phoneFormats) {
       const lookupResponse = await fetch(
-        `https://services.leadconnectorhq.com/contacts/lookup?locationId=${HIGHLEVEL_LOCATION_ID}&phone=${encodeURIComponent(phone)}`,
+        `https://services.leadconnectorhq.com/contacts/lookup?locationId=${HIGHLEVEL_LOCATION_ID}&phone=${encodeURIComponent(phoneFormat)}`,
         { headers }
       );
 
@@ -153,4 +153,4 @@ export default async function handler(req, res) {
     console.error('SMS error:', error);
     return res.status(500).json({ error: error.message });
   }
-}
+};

@@ -297,3 +297,44 @@ export async function updateEmailTemplate(id, updates) {
   const result = await adminCrud('email_templates', 'update', { id, data: updates });
   return result.data;
 }
+
+// ============================================
+// FILE UPLOAD API
+// ============================================
+
+export async function uploadFile(bucket, filePath, file) {
+  // Convert file to base64
+  const fileData = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result.split(',')[1]; // Remove data:...;base64, prefix
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  const response = await fetch('/api/admin/upload', {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({
+      bucket,
+      filePath,
+      fileData,
+      contentType: file.type
+    })
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      sessionStorage.clear();
+      window.location.href = '/admin';
+      return;
+    }
+    throw new Error(data.error || `HTTP ${response.status}`);
+  }
+
+  return data.publicUrl;
+}

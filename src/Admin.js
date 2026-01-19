@@ -41,7 +41,8 @@ import {
   markPmMessagesAsRead,
   updateGlobalDocument,
   fetchEmailTemplates,
-  updateEmailTemplate
+  updateEmailTemplate,
+  uploadFile
 } from './adminApi';
 
 // ============================================
@@ -2896,24 +2897,15 @@ function GlobalDocsManager({ documents = [], onRefresh }) {
       const fileName = `${doc.key}.${fileExt}`;
       const filePath = `global-docs/${fileName}`;
 
-      // Upload to Supabase storage
-      const { error: uploadError } = await supabase.storage
-        .from('documents')
-        .upload(filePath, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('documents')
-        .getPublicUrl(filePath);
+      // Upload via admin API to bypass storage RLS
+      const publicUrl = await uploadFile('documents', filePath, file);
 
       // Update document record
-      await updateGlobalDocument(doc.id, { url: urlData.publicUrl });
+      await updateGlobalDocument(doc.id, { url: publicUrl });
       onRefresh();
     } catch (err) {
       console.error('Error uploading document:', err);
-      alert('Failed to upload document');
+      alert('Failed to upload document: ' + err.message);
     } finally {
       setUploading(null);
     }

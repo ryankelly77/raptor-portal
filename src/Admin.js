@@ -1855,9 +1855,9 @@ function NewProjectModal({ locations, properties, onClose, onSave }) {
     is_active: true
   });
 
-  const [smartFridgeQty, setSmartFridgeQty] = useState(0);
-  const [smartCookerQty, setSmartCookerQty] = useState(0);
-  const [enclosureType, setEnclosureType] = useState('');
+  const [smartFridgeQty, setSmartFridgeQty] = useState(2);
+  const [smartCookerQty, setSmartCookerQty] = useState(1);
+  const [enclosureType, setEnclosureType] = useState('wrap');
   const [enclosureColor, setEnclosureColor] = useState('');
 
   // Generate next project number on mount

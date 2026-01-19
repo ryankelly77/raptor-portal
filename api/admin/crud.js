@@ -62,6 +62,14 @@ const TABLE_CONFIG = {
     ],
     requiredForCreate: ['name', 'property_id'],
     orderBy: { column: 'name', ascending: true }
+  },
+  pm_messages: {
+    allowedFields: [
+      'project_id', 'task_id', 'phase_id', 'sender_type', 'sender_name',
+      'message', 'is_read', 'read_at', 'metadata'
+    ],
+    requiredForCreate: ['project_id', 'message'],
+    orderBy: { column: 'created_at', ascending: false }
   }
 };
 

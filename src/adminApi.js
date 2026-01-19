@@ -215,3 +215,37 @@ export async function deleteLocation(id) {
   await adminCrud('locations', 'delete', { id });
   return true;
 }
+
+// ============================================
+// PM MESSAGES API
+// ============================================
+
+export async function fetchPmMessages(projectId) {
+  const result = await adminCrud('pm_messages', 'read', { filters: { project_id: projectId } });
+  return result.data;
+}
+
+export async function fetchPmMessagesByTask(taskId) {
+  const result = await adminCrud('pm_messages', 'read', { filters: { task_id: taskId } });
+  return result.data;
+}
+
+export async function fetchPmMessage(id) {
+  const result = await adminCrud('pm_messages', 'read', { id });
+  return result.data;
+}
+
+export async function createPmMessage(data) {
+  const result = await adminCrud('pm_messages', 'create', { data });
+  return result.data;
+}
+
+export async function updatePmMessage(id, updates) {
+  const result = await adminCrud('pm_messages', 'update', { id, data: updates });
+  return result.data;
+}
+
+export async function deletePmMessage(id) {
+  await adminCrud('pm_messages', 'delete', { id });
+  return true;
+}

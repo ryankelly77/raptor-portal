@@ -2146,6 +2146,13 @@ function NewProjectModal({ locations, properties, onClose, onSave }) {
           )}
         </div>
 
+        {saving && (
+          <div className="saving-overlay">
+            <div className="saving-spinner"></div>
+            <p>Creating Install...</p>
+            <p className="saving-subtext">Setting up phases and tasks</p>
+          </div>
+        )}
         <div className="modal-actions">
           <button className="btn-cancel" onClick={onClose} disabled={saving}>Cancel</button>
           <button
@@ -2153,7 +2160,7 @@ function NewProjectModal({ locations, properties, onClose, onSave }) {
             onClick={handleSave}
             disabled={!form.location_id || saving}
           >
-            {saving ? 'Creating Install...' : 'Create Install'}
+            {saving ? 'Creating...' : 'Create Install'}
           </button>
         </div>
       </div>

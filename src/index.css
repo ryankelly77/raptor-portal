@@ -2407,6 +2407,7 @@ body {
   width: 90%;
   max-height: 90vh;
   overflow-y: auto;
+  position: relative;
 }
 .modal h3 { margin: 0 0 20px 0; color: var(--text-primary); }
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px; }
@@ -4253,4 +4254,48 @@ body {
   .global-doc-item { flex-direction: column; gap: 15px; align-items: flex-start; }
   .pm-text-input { max-width: 100%; }
   .admin-login-box { margin: 20px; }
+}
+
+/* Saving overlay for modals */
+.saving-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: 12px;
+}
+
+.saving-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #e5e5e5;
+  border-top-color: var(--raptor-orange);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.saving-overlay p {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.saving-overlay .saving-subtext {
+  font-size: 14px;
+  font-weight: 400;
+  color: #666;
+  margin-top: 8px;
 }

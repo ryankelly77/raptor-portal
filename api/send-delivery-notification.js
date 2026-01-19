@@ -1,6 +1,8 @@
 // Vercel Serverless Function for sending delivery notification emails via Mailgun
 
 import { createClient } from '@supabase/supabase-js';
+import { isNonEmptyString, isValidId } from './lib/validate.js';
+import { requireAdmin } from './lib/auth.js';
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL,
@@ -130,22 +132,44 @@ function generateDeliveryEmail(delivery, propertyName, projectToken, firstName) 
 }
 
 export default async function handler(req, res) {
+  // 1. Method validation
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // 2. Admin authentication
+  const auth = await requireAdmin(req);
+  if (!auth.authenticated) {
+    return res.status(auth.status).json({ error: auth.error });
+  }
+
+  // 3. Environment validation
   if (!MAILGUN_API_KEY) {
+    console.error('MAILGUN_API_KEY not configured');
     return res.status(500).json({ error: 'Mailgun API key not configured' });
   }
 
-  const { projectId, delivery } = req.body;
+  // 4. Input validation
+  const { projectId, delivery } = req.body || {};
 
-  if (!projectId || !delivery) {
-    return res.status(400).json({ error: 'Missing projectId or delivery data' });
+  if (!isValidId(projectId)) {
+    return res.status(400).json({ error: 'Valid projectId is required' });
   }
 
-  if (!delivery.equipment || !delivery.date || !delivery.tracking) {
-    return res.status(400).json({ error: 'Delivery must have equipment, date, and tracking number' });
+  if (!delivery || typeof delivery !== 'object') {
+    return res.status(400).json({ error: 'Delivery data is required' });
+  }
+
+  if (!isNonEmptyString(delivery.equipment)) {
+    return res.status(400).json({ error: 'Delivery equipment is required' });
+  }
+
+  if (!isNonEmptyString(delivery.date)) {
+    return res.status(400).json({ error: 'Delivery date is required' });
+  }
+
+  if (!isNonEmptyString(delivery.tracking)) {
+    return res.status(400).json({ error: 'Delivery tracking number is required' });
   }
 
   try {

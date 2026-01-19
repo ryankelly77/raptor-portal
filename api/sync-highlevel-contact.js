@@ -1,21 +1,43 @@
 // Vercel Serverless Function for syncing contacts with HighLevel
 
-export default async function handler(req, res) {
-  const HIGHLEVEL_API_KEY = process.env.HIGHLEVEL_API_KEY;
-  const HIGHLEVEL_LOCATION_ID = process.env.HIGHLEVEL_LOCATION_ID;
+import { isNonEmptyString, isValidEmail, validatePhone } from './lib/validate.js';
+import { requireAdmin } from './lib/auth.js';
 
+export default async function handler(req, res) {
+  // 1. Method validation
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // 2. Admin authentication
+  const auth = await requireAdmin(req);
+  if (!auth.authenticated) {
+    return res.status(auth.status).json({ error: auth.error });
+  }
+
+  // 3. Environment validation
+  const HIGHLEVEL_API_KEY = process.env.HIGHLEVEL_API_KEY;
+  const HIGHLEVEL_LOCATION_ID = process.env.HIGHLEVEL_LOCATION_ID;
+
   if (!HIGHLEVEL_API_KEY || !HIGHLEVEL_LOCATION_ID) {
+    console.error('HighLevel credentials not configured');
     return res.status(500).json({ error: 'HighLevel not configured' });
   }
 
-  const { name, email, phone } = req.body;
+  // 4. Input validation
+  const { name, email, phone } = req.body || {};
 
-  if (!name || !email) {
-    return res.status(400).json({ error: 'Name and email are required' });
+  if (!isNonEmptyString(name)) {
+    return res.status(400).json({ error: 'Name is required' });
+  }
+
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ error: 'Valid email is required' });
+  }
+
+  // Phone is optional but validate if provided
+  if (phone && !validatePhone(phone)) {
+    return res.status(400).json({ error: 'Invalid phone number format' });
   }
 
   const headers = {

@@ -115,14 +115,28 @@ if (!name || !email) {
 | Variable | Purpose | Location |
 |----------|---------|----------|
 | `REACT_APP_SUPABASE_URL` | Supabase project URL | Frontend |
-| `REACT_APP_SUPABASE_ANON_KEY` | Supabase anonymous key | Frontend |
-| `REACT_APP_ADMIN_PASSWORD` | Admin dashboard password | Frontend |
+| `REACT_APP_SUPABASE_ANON_KEY` | Supabase anonymous key (read-only after RLS update) | Frontend |
+| `SUPABASE_URL` | Supabase project URL (for API routes) | Vercel only |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key for admin writes | Vercel only |
+| `ADMIN_PASSWORD` | Admin dashboard password (server-side) | Vercel only |
+| `JWT_SECRET` | Secret for signing admin JWT tokens (min 32 chars) | Vercel only |
 | `MAILGUN_API_KEY` | Mailgun API key | Vercel only |
 | `MAILGUN_DOMAIN` | Mailgun sending domain | Vercel only |
 | `HIGHLEVEL_API_KEY` | HighLevel API key | Vercel only |
 | `HIGHLEVEL_LOCATION_ID` | HighLevel location ID | Vercel only |
 | `CRON_SECRET` | Vercel cron authentication | Vercel only |
 | `PORTAL_URL` | Production URL | Vercel only |
+
+> **IMPORTANT:** `SUPABASE_SERVICE_ROLE_KEY` has full database access. Never expose in frontend code.
+
+> **Note:** `REACT_APP_ADMIN_PASSWORD` is deprecated. Use `ADMIN_PASSWORD` instead for server-side validation.
+
+### Generating Secrets
+
+For `JWT_SECRET`, generate a cryptographically secure random string:
+```bash
+openssl rand -hex 32
+```
 
 ### Adding New Variables
 
@@ -180,26 +194,53 @@ const supabase = createClient(
 
 ### Current Implementation
 
-The admin dashboard uses a simple password stored in `REACT_APP_ADMIN_PASSWORD`. This is checked client-side and stored in sessionStorage.
+Admin authentication uses server-side password validation with JWT tokens:
+
+1. **Login** (`/api/admin-auth`):
+   - Password validated server-side (never exposed in client bundle)
+   - Rate limited: 5 attempts per minute per IP
+   - Returns signed JWT with 8-hour expiration
+
+2. **Protected API Routes** (require valid JWT via `requireAdmin` middleware):
+   - `send-sms` - sends SMS to customers
+   - `send-delivery-notification` - sends delivery notification emails
+   - `sync-highlevel-contact` - syncs contacts with HighLevel CRM
+
+3. **Token Storage**:
+   - JWT stored in `sessionStorage.adminToken`
+   - Sent via `Authorization: Bearer <token>` header
 
 ```javascript
-if (passwordInput === ADMIN_PASSWORD) {
-  sessionStorage.setItem('adminAuth', 'true');
-  setIsAuthenticated(true);
-}
+// Frontend: Include auth header in protected requests
+const response = await fetch('/api/protected-route', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${sessionStorage.getItem('adminToken')}`
+  },
+  body: JSON.stringify(data)
+});
 ```
 
-### Limitations
+### Security Features
 
-- Password is in client-side code (obfuscated but not secure)
-- No server-side session validation
-- No role-based access control
+- Server-side password validation (constant-time comparison)
+- Cryptographically secure JWT (HS256, 8h expiration)
+- Rate limiting on login endpoint
+- Protected API routes require valid, non-expired token
 
-### Future Improvements (if needed)
+### Known Limitations
 
-1. Move auth to Supabase Auth
-2. Add admin role to user profiles
-3. Validate sessions server-side in API routes
+- **Rate limiting resets on cold start**: The login rate limiter uses in-memory storage, which resets when the Vercel serverless function cold starts. This provides protection within an instance's lifecycle but is not persistent. For production-grade rate limiting, migrate to [Upstash Redis](https://upstash.com/) or Vercel KV.
+- Admin CRUD operations still go directly to Supabase via anon key
+- RLS policies are the primary protection for database writes
+- No refresh token mechanism (user must re-login after 8h)
+
+### Future Improvements
+
+1. Route all admin writes through authenticated API endpoints
+2. Add refresh token support
+3. Migrate to Supabase Auth for full user management
 
 ---
 

@@ -122,13 +122,14 @@ function generateReminderEmail(project, allTasks, incompleteCount, propertyName,
 }
 
 export default async function handler(req, res) {
-  // Verify cron secret for scheduled calls (optional security)
-  const cronSecret = req.headers['x-cron-secret'];
-  if (process.env.CRON_SECRET && cronSecret !== process.env.CRON_SECRET) {
-    // Allow manual calls without secret for testing
-    if (req.method !== 'POST' || !req.body?.manual) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
+  // Verify cron secret for all calls - no bypass allowed
+  const cronSecret = req.headers['x-cron-secret'] || req.headers.authorization?.replace('Bearer ', '');
+  if (!process.env.CRON_SECRET) {
+    console.error('CRON_SECRET not configured');
+    return res.status(500).json({ error: 'Service not configured' });
+  }
+  if (cronSecret !== process.env.CRON_SECRET) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   if (!MAILGUN_API_KEY) {

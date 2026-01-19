@@ -1,29 +1,50 @@
 // Vercel Serverless Function for sending SMS via HighLevel
 
-export default async function handler(req, res) {
-  const HIGHLEVEL_API_KEY = process.env.HIGHLEVEL_API_KEY;
-  const HIGHLEVEL_LOCATION_ID = process.env.HIGHLEVEL_LOCATION_ID;
+import { validatePhone, isValidUrl, isNonEmptyString } from './lib/validate.js';
+import { requireAdmin } from './lib/auth.js';
 
+export default async function handler(req, res) {
+  // 1. Method validation
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // 2. Admin authentication
+  const auth = await requireAdmin(req);
+  if (!auth.authenticated) {
+    return res.status(auth.status).json({ error: auth.error });
+  }
+
+  // 3. Environment validation
+  const HIGHLEVEL_API_KEY = process.env.HIGHLEVEL_API_KEY;
+  const HIGHLEVEL_LOCATION_ID = process.env.HIGHLEVEL_LOCATION_ID;
+
   if (!HIGHLEVEL_API_KEY || !HIGHLEVEL_LOCATION_ID) {
+    console.error('HighLevel credentials not configured');
     return res.status(500).json({ error: 'SMS service not configured' });
   }
 
-  const { phone, url } = req.body;
+  // 4. Input validation
+  const { phone, url } = req.body || {};
 
-  if (!phone || !url) {
-    return res.status(400).json({ error: 'Missing phone number or URL' });
+  if (!isNonEmptyString(phone)) {
+    return res.status(400).json({ error: 'Phone number is required' });
+  }
+
+  if (!isNonEmptyString(url)) {
+    return res.status(400).json({ error: 'URL is required' });
+  }
+
+  const formattedPhone = validatePhone(phone);
+  if (!formattedPhone) {
+    return res.status(400).json({ error: 'Invalid phone number format (10 digits required)' });
+  }
+
+  if (!isValidUrl(url)) {
+    return res.status(400).json({ error: 'Invalid URL format' });
   }
 
   const digits = phone.replace(/\D/g, '');
-  if (digits.length !== 10) {
-    return res.status(400).json({ error: 'Invalid phone number' });
-  }
-
-  const formattedPhone = `+1${digits}`;
   const headers = {
     'Authorization': `Bearer ${HIGHLEVEL_API_KEY}`,
     'Content-Type': 'application/json',

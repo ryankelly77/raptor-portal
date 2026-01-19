@@ -14,26 +14,39 @@ import {
   updateProperty,
   createLocation,
   updateLocation,
-  createProject,
-  updateProject,
-  createPhase,
-  updatePhase,
-  createTask,
-  updateTask,
-  deleteTask,
   createEquipment,
   updateEquipment,
   deleteEquipment,
-  deleteProject,
   updateGlobalDocument,
   fetchEmailTemplates,
   updateEmailTemplate
 } from './supabaseClient';
 
+// Admin API client for authenticated CRUD operations (uses service role key via API)
+import {
+  createProject,
+  updateProject,
+  deleteProject,
+  createPhase,
+  updatePhase,
+  deletePhase,
+  createTask,
+  updateTask,
+  deleteTask
+} from './adminApi';
+
 // ============================================
 // ADMIN DASHBOARD
 // ============================================
-const ADMIN_PASSWORD = process.env.REACT_APP_ADMIN_PASSWORD || 'raptorlive26';
+
+// Helper to get auth headers for protected API calls
+function getAdminAuthHeaders() {
+  const token = sessionStorage.getItem('adminToken');
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+  };
+}
 
 export default function Admin() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -41,6 +54,7 @@ export default function Admin() {
   });
   const [passwordInput, setPasswordInput] = useState('');
   const [passwordError, setPasswordError] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('projects');
@@ -50,14 +64,32 @@ export default function Admin() {
   const [editItem, setEditItem] = useState(null);
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
 
-  function handlePasswordSubmit(e) {
+  async function handlePasswordSubmit(e) {
     e.preventDefault();
-    if (passwordInput === ADMIN_PASSWORD) {
-      sessionStorage.setItem('adminAuth', 'true');
-      setIsAuthenticated(true);
-      setPasswordError(false);
-    } else {
+    setAuthLoading(true);
+    setPasswordError(false);
+
+    try {
+      const response = await fetch('/api/admin-auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: passwordInput })
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        sessionStorage.setItem('adminAuth', 'true');
+        sessionStorage.setItem('adminToken', result.token);
+        setIsAuthenticated(true);
+      } else {
+        setPasswordError(true);
+      }
+    } catch (err) {
+      console.error('Auth error:', err);
       setPasswordError(true);
+    } finally {
+      setAuthLoading(false);
     }
   }
 
@@ -125,10 +157,13 @@ export default function Admin() {
               onChange={(e) => setPasswordInput(e.target.value)}
               placeholder="Enter password"
               className={passwordError ? 'error' : ''}
+              disabled={authLoading}
               autoFocus
             />
             {passwordError && <p className="error-message">Incorrect password</p>}
-            <button type="submit">Enter</button>
+            <button type="submit" disabled={authLoading}>
+              {authLoading ? 'Verifying...' : 'Enter'}
+            </button>
           </form>
         </div>
       </div>
@@ -1385,7 +1420,7 @@ function DeliveryInputs({ task, projectId, onRefresh }) {
       try {
         const response = await fetch('/api/send-delivery-notification', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAdminAuthHeaders(),
           body: JSON.stringify({ projectId, delivery })
         });
 
@@ -2502,7 +2537,7 @@ function ManagersList({ managers, onRefresh }) {
     try {
       const hlResponse = await fetch('/api/sync-highlevel-contact', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAdminAuthHeaders(),
         body: JSON.stringify({
           name: data.name,
           email: data.email,
@@ -2528,7 +2563,7 @@ function ManagersList({ managers, onRefresh }) {
     try {
       const hlResponse = await fetch('/api/sync-highlevel-contact', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAdminAuthHeaders(),
         body: JSON.stringify({
           name: data.name,
           email: data.email,

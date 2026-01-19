@@ -1262,10 +1262,10 @@ function SendToPhoneModal({ isOpen, onClose, url }) {
     setError('');
 
     try {
-      const response = await fetch('/api/send-sms', {
+      const response = await fetch('/api/request-project-link', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: digits, url })
+        body: JSON.stringify({ phone: digits, projectUrl: url })
       });
 
       const result = await response.json();

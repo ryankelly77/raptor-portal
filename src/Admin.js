@@ -248,7 +248,18 @@ export default function Admin() {
             )}
           </button>
         </nav>
-        <Link to="/" className="admin-home-link">← Back</Link>
+        <div className="admin-header-right">
+          <Link to="/" className="admin-home-link">← Back</Link>
+          <button
+            className="admin-logout-btn"
+            onClick={() => {
+              sessionStorage.clear();
+              setIsAuthenticated(false);
+            }}
+          >
+            Logout
+          </button>
+        </div>
       </header>
 
       <main className="admin-main">

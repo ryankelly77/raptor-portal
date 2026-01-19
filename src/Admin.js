@@ -1859,6 +1859,7 @@ function NewProjectModal({ locations, properties, onClose, onSave }) {
   const [smartCookerQty, setSmartCookerQty] = useState(1);
   const [enclosureType, setEnclosureType] = useState('wrap');
   const [enclosureColor, setEnclosureColor] = useState('');
+  const [saving, setSaving] = useState(false);
 
   // Generate next project number on mount
   useEffect(() => {
@@ -1916,8 +1917,9 @@ function NewProjectModal({ locations, properties, onClose, onSave }) {
   };
 
   const handleSave = async () => {
-    if (!form.location_id) return;
+    if (!form.location_id || saving) return;
 
+    setSaving(true);
     try {
       // Generate a survey token
       const surveyToken = Math.random().toString(36).substring(2, 15);
@@ -2069,6 +2071,8 @@ function NewProjectModal({ locations, properties, onClose, onSave }) {
     } catch (err) {
       console.error('Error creating install:', err);
       alert('Error creating install: ' + err.message);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -2143,13 +2147,13 @@ function NewProjectModal({ locations, properties, onClose, onSave }) {
         </div>
 
         <div className="modal-actions">
-          <button className="btn-cancel" onClick={onClose}>Cancel</button>
+          <button className="btn-cancel" onClick={onClose} disabled={saving}>Cancel</button>
           <button
             className="btn-primary"
             onClick={handleSave}
-            disabled={!form.location_id}
+            disabled={!form.location_id || saving}
           >
-            Create Install
+            {saving ? 'Creating Install...' : 'Create Install'}
           </button>
         </div>
       </div>

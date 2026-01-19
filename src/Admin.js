@@ -8,12 +8,6 @@ import {
   fetchActivityLog,
   deleteActivityLog,
   clearActivityLog,
-  createPropertyManager,
-  updatePropertyManager,
-  createProperty,
-  updateProperty,
-  createLocation,
-  updateLocation,
   createEquipment,
   updateEquipment,
   deleteEquipment,
@@ -32,7 +26,16 @@ import {
   deletePhase,
   createTask,
   updateTask,
-  deleteTask
+  deleteTask,
+  createPropertyManager,
+  updatePropertyManager,
+  deletePropertyManager,
+  createProperty,
+  updateProperty,
+  deleteProperty,
+  createLocation,
+  updateLocation,
+  deleteLocation
 } from './adminApi';
 
 // ============================================

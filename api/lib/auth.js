@@ -1,6 +1,4 @@
-console.log('AUTH VERSION: 2026-01-18-v2');
 // JWT authentication utilities using jsonwebtoken library
-// Force rebuild: 2026-01-18
 
 const jwt = require('jsonwebtoken');
 

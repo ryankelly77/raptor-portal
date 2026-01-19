@@ -125,14 +125,11 @@ export default function Admin() {
 
   async function loadUnreadCount() {
     try {
-      const { data, error } = await supabase
-        .from('pm_messages')
-        .select('id')
-        .eq('sender', 'pm')
-        .is('read_at', null);
-
-      if (!error && data) {
-        setUnreadMessageCount(data.length);
+      const data = await fetchAllPmMessages();
+      if (data) {
+        // Count unread messages from PMs
+        const unreadCount = data.filter(msg => msg.sender === 'pm' && !msg.read_at).length;
+        setUnreadMessageCount(unreadCount);
       }
     } catch (err) {
       console.error('Error loading unread count:', err);
@@ -2173,12 +2170,11 @@ function PropertiesList({ properties, locations, managers, onRefresh }) {
   async function handleDeleteProperty(id) {
     if (!window.confirm('Delete this property and all its locations? This cannot be undone.')) return;
     try {
-      const { deleteProperty } = await import('./supabaseClient');
       await deleteProperty(id);
       onRefresh();
     } catch (err) {
       console.error('Error deleting property:', err);
-      alert('Error deleting property');
+      alert('Error deleting property: ' + err.message);
     }
   }
 
@@ -2197,12 +2193,11 @@ function PropertiesList({ properties, locations, managers, onRefresh }) {
   async function handleDeleteLocation(id) {
     if (!window.confirm('Delete this location?')) return;
     try {
-      const { deleteLocation } = await import('./supabaseClient');
       await deleteLocation(id);
       onRefresh();
     } catch (err) {
       console.error('Error deleting location:', err);
-      alert('Error deleting location');
+      alert('Error deleting location: ' + err.message);
     }
   }
 
@@ -2595,12 +2590,11 @@ function ManagersList({ managers, onRefresh }) {
   async function handleDelete(id) {
     if (!window.confirm('Delete this property manager? This may affect associated properties.')) return;
     try {
-      const { deletePropertyManager } = await import('./supabaseClient');
       await deletePropertyManager(id);
       onRefresh();
     } catch (err) {
       console.error('Error deleting manager:', err);
-      alert('Error deleting manager');
+      alert('Error deleting manager: ' + err.message);
     }
   }
 

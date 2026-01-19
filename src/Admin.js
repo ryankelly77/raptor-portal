@@ -35,7 +35,13 @@ import {
   deleteProperty,
   createLocation,
   updateLocation,
-  deleteLocation
+  deleteLocation,
+  fetchAllPmMessages,
+  fetchPmMessagesByPm,
+  createPmMessage,
+  deletePmMessage,
+  deletePmMessagesByPm,
+  markPmMessagesAsRead
 } from './adminApi';
 
 // ============================================
@@ -3244,12 +3250,12 @@ function AdminMessagesSection({ propertyManagers, onUnreadChange }) {
 
   async function loadConversations() {
     try {
-      const { data, error } = await supabase
-        .from('pm_messages')
-        .select('pm_id, created_at, sender, read_at')
-        .order('created_at', { ascending: false });
+      const data = await fetchAllPmMessages();
 
-      if (!error && data) {
+      if (data) {
+        // Sort by created_at descending
+        data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
         // Get unique PM IDs with latest message time and unread count
         const pmMap = new Map();
         data.forEach(msg => {
@@ -3285,12 +3291,7 @@ function AdminMessagesSection({ propertyManagers, onUnreadChange }) {
 
   async function markAsRead(pmId) {
     try {
-      await supabase
-        .from('pm_messages')
-        .update({ read_at: new Date().toISOString() })
-        .eq('pm_id', pmId)
-        .eq('sender', 'pm')
-        .is('read_at', null);
+      await markPmMessagesAsRead(pmId);
 
       // Refresh conversations to update unread counts
       loadConversations();
@@ -3303,13 +3304,10 @@ function AdminMessagesSection({ propertyManagers, onUnreadChange }) {
 
   async function loadMessages(pmId) {
     try {
-      const { data, error } = await supabase
-        .from('pm_messages')
-        .select('*')
-        .eq('pm_id', pmId)
-        .order('created_at', { ascending: true });
-
-      if (!error && data) {
+      const data = await fetchPmMessagesByPm(pmId);
+      if (data) {
+        // Sort by created_at ascending for display
+        data.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
         setMessages(data);
       }
     } catch (err) {
@@ -3322,25 +3320,19 @@ function AdminMessagesSection({ propertyManagers, onUnreadChange }) {
 
     setSending(true);
     try {
-      const { error } = await supabase
-        .from('pm_messages')
-        .insert([{
-          pm_id: selectedPM.id,
-          sender: 'admin',
-          sender_name: 'Raptor Vending',
-          message: newMessage.trim()
-        }]);
+      await createPmMessage({
+        pm_id: selectedPM.id,
+        sender: 'admin',
+        sender_name: 'Raptor Vending',
+        message: newMessage.trim()
+      });
 
-      if (error) {
-        console.error('Error sending message:', error);
-        alert('Failed to send message');
-      } else {
-        setNewMessage('');
-        loadMessages(selectedPM.id);
-        loadConversations();
-      }
+      setNewMessage('');
+      loadMessages(selectedPM.id);
+      loadConversations();
     } catch (err) {
       console.error('Error sending message:', err);
+      alert('Failed to send message: ' + err.message);
     } finally {
       setSending(false);
     }
@@ -3350,20 +3342,12 @@ function AdminMessagesSection({ propertyManagers, onUnreadChange }) {
     if (!window.confirm('Delete this message?')) return;
 
     try {
-      const { error } = await supabase
-        .from('pm_messages')
-        .delete()
-        .eq('id', msgId);
-
-      if (error) {
-        console.error('Error deleting message:', error);
-        alert('Failed to delete message');
-      } else {
-        loadMessages(selectedPM.id);
-        loadConversations();
-      }
+      await deletePmMessage(msgId);
+      loadMessages(selectedPM.id);
+      loadConversations();
     } catch (err) {
       console.error('Error deleting message:', err);
+      alert('Failed to delete message: ' + err.message);
     }
   }
 
@@ -3371,22 +3355,14 @@ function AdminMessagesSection({ propertyManagers, onUnreadChange }) {
     if (!window.confirm('Delete ALL messages with this property manager?')) return;
 
     try {
-      const { error } = await supabase
-        .from('pm_messages')
-        .delete()
-        .eq('pm_id', pmId);
-
-      if (error) {
-        console.error('Error deleting conversation:', error);
-        alert('Failed to delete conversation');
-      } else {
-        setSelectedPM(null);
-        setMessages([]);
-        loadConversations();
-        if (onUnreadChange) onUnreadChange();
-      }
+      await deletePmMessagesByPm(pmId);
+      setSelectedPM(null);
+      setMessages([]);
+      loadConversations();
+      if (onUnreadChange) onUnreadChange();
     } catch (err) {
       console.error('Error deleting conversation:', err);
+      alert('Failed to delete conversation: ' + err.message);
     }
   }
 

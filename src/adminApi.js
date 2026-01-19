@@ -220,18 +220,13 @@ export async function deleteLocation(id) {
 // PM MESSAGES API
 // ============================================
 
-export async function fetchPmMessages(projectId) {
-  const result = await adminCrud('pm_messages', 'read', { filters: { project_id: projectId } });
+export async function fetchAllPmMessages() {
+  const result = await adminCrud('pm_messages', 'read');
   return result.data;
 }
 
-export async function fetchPmMessagesByTask(taskId) {
-  const result = await adminCrud('pm_messages', 'read', { filters: { task_id: taskId } });
-  return result.data;
-}
-
-export async function fetchPmMessage(id) {
-  const result = await adminCrud('pm_messages', 'read', { id });
+export async function fetchPmMessagesByPm(pmId) {
+  const result = await adminCrud('pm_messages', 'read', { filters: { pm_id: pmId } });
   return result.data;
 }
 
@@ -247,5 +242,26 @@ export async function updatePmMessage(id, updates) {
 
 export async function deletePmMessage(id) {
   await adminCrud('pm_messages', 'delete', { id });
+  return true;
+}
+
+export async function deletePmMessagesByPm(pmId) {
+  // Need to fetch all messages for this PM and delete each one
+  const messages = await fetchPmMessagesByPm(pmId);
+  for (const msg of messages) {
+    await adminCrud('pm_messages', 'delete', { id: msg.id });
+  }
+  return true;
+}
+
+export async function markPmMessagesAsRead(pmId) {
+  // Fetch unread messages from PM and mark as read
+  const messages = await fetchPmMessagesByPm(pmId);
+  const now = new Date().toISOString();
+  for (const msg of messages) {
+    if (msg.sender === 'pm' && !msg.read_at) {
+      await adminCrud('pm_messages', 'update', { id: msg.id, data: { read_at: now } });
+    }
+  }
   return true;
 }

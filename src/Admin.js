@@ -1179,6 +1179,7 @@ function PhaseEditor({ phase, phaseNumber, project, onUpdatePhase, onUpdateTask,
               const isAdminDelivery = task.label.startsWith('[ADMIN-DELIVERY]');
               const isAdminDoc = task.label.startsWith('[ADMIN-DOC]');
               const isPmText = task.label.startsWith('[PM-TEXT]');
+              const isPmTask = task.label.startsWith('[PM]') || task.label.startsWith('[PM-DATE]') || task.label.startsWith('[PM-TEXT]');
               const displayLabel = task.label
                 .replace('[ADMIN-DATE] ', '')
                 .replace('[ADMIN-SPEED] ', '')
@@ -1198,6 +1199,7 @@ function PhaseEditor({ phase, phaseNumber, project, onUpdatePhase, onUpdateTask,
                     onChange={e => onUpdateTask(task.id, e.target.checked)}
                   />
                   <span className={task.completed ? 'completed' : ''}>
+                    {isPmTask && <span className="pm-badge">PM</span>}
                     {displayLabel}
                   </span>
                   {isAdminDate && (

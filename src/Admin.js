@@ -10,10 +10,7 @@ import {
   clearActivityLog,
   createEquipment,
   updateEquipment,
-  deleteEquipment,
-  updateGlobalDocument,
-  fetchEmailTemplates,
-  updateEmailTemplate
+  deleteEquipment
 } from './supabaseClient';
 
 // Admin API client for authenticated CRUD operations (uses service role key via API)
@@ -41,7 +38,10 @@ import {
   createPmMessage,
   deletePmMessage,
   deletePmMessagesByPm,
-  markPmMessagesAsRead
+  markPmMessagesAsRead,
+  updateGlobalDocument,
+  fetchEmailTemplates,
+  updateEmailTemplate
 } from './adminApi';
 
 // ============================================

@@ -269,3 +269,31 @@ export async function markPmMessagesAsRead(pmId) {
   }
   return true;
 }
+
+// ============================================
+// GLOBAL DOCUMENTS API
+// ============================================
+
+export async function fetchGlobalDocuments() {
+  const result = await adminCrud('global_documents', 'read');
+  return result.data;
+}
+
+export async function updateGlobalDocument(id, updates) {
+  const result = await adminCrud('global_documents', 'update', { id, data: updates });
+  return result.data;
+}
+
+// ============================================
+// EMAIL TEMPLATES API
+// ============================================
+
+export async function fetchEmailTemplates() {
+  const result = await adminCrud('email_templates', 'read');
+  return result.data;
+}
+
+export async function updateEmailTemplate(id, updates) {
+  const result = await adminCrud('email_templates', 'update', { id, data: updates });
+  return result.data;
+}

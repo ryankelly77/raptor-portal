@@ -69,6 +69,20 @@ const TABLE_CONFIG = {
     ],
     requiredForCreate: ['pm_id', 'message'],
     orderBy: { column: 'created_at', ascending: false }
+  },
+  global_documents: {
+    allowedFields: [
+      'key', 'label', 'description', 'url', 'file_type'
+    ],
+    requiredForCreate: ['key', 'label'],
+    orderBy: { column: 'label', ascending: true }
+  },
+  email_templates: {
+    allowedFields: [
+      'template_key', 'name', 'subject', 'body', 'description', 'is_active'
+    ],
+    requiredForCreate: ['template_key', 'name'],
+    orderBy: { column: 'name', ascending: true }
   }
 };
 

@@ -59,13 +59,17 @@ function validateRequired(body, fields) {
 }
 
 /**
- * Validate integer ID
+ * Validate ID (supports both integer and UUID formats)
  */
 function isValidId(id) {
   if (typeof id === 'number') return Number.isInteger(id) && id > 0;
   if (typeof id === 'string') {
+    // Check for UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (uuidRegex.test(id)) return true;
+    // Check for positive integer string
     const num = parseInt(id, 10);
-    return !isNaN(num) && num > 0;
+    return !isNaN(num) && num > 0 && String(num) === id;
   }
   return false;
 }

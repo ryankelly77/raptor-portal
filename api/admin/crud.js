@@ -203,27 +203,18 @@ module.exports = async function handler(req, res) {
         // Sanitize and prepare insert data
         let insertData = sanitizeFields(table, data);
 
-        // Table-specific defaults
+        // Table-specific defaults (IDs passed through as-is - supports both int and UUID)
         if (table === 'projects') {
-          insertData.location_id = parseInt(insertData.location_id, 10);
           insertData.public_token = insertData.public_token || generateToken();
           insertData.is_active = insertData.is_active !== false;
         } else if (table === 'phases') {
-          insertData.project_id = parseInt(insertData.project_id, 10);
           insertData.phase_number = insertData.phase_number || 1;
           insertData.status = insertData.status || 'not_started';
         } else if (table === 'tasks') {
-          insertData.phase_id = parseInt(insertData.phase_id, 10);
           insertData.completed = insertData.completed || false;
           insertData.sort_order = insertData.sort_order || 0;
         } else if (table === 'property_managers') {
           insertData.is_active = insertData.is_active !== false;
-        } else if (table === 'properties') {
-          if (insertData.property_manager_id) {
-            insertData.property_manager_id = parseInt(insertData.property_manager_id, 10);
-          }
-        } else if (table === 'locations') {
-          insertData.property_id = parseInt(insertData.property_id, 10);
         }
 
         const { data: created, error } = await supabase

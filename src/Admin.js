@@ -1983,6 +1983,7 @@ function NewProjectModal({ locations, properties, onClose, onSave }) {
           tasks: [
             'Survey link distributed to property management',
             '[PM] Survey link distributed to tenants',
+            '[PM-TEXT] Allow Raptor Vending to place retractable banners on site announcing the food program until machines arrive',
             'Snack preferences compiled',
             'Hot meal preferences compiled',
             'Custom menu recommendations finalized'

@@ -656,7 +656,8 @@ export async function updateEmailTemplate(id, updates) {
 // ============================================
 function formatDate(dateString) {
   if (!dateString) return '';
-  const date = new Date(dateString);
+  // Append T00:00:00 to interpret as local midnight, not UTC
+  const date = new Date(dateString + 'T00:00:00');
   return date.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -666,7 +667,8 @@ function formatDate(dateString) {
 
 function calculateDaysRemaining(dateString) {
   if (!dateString) return 0;
-  const target = new Date(dateString);
+  // Append T00:00:00 to interpret as local midnight, not UTC
+  const target = new Date(dateString + 'T00:00:00');
   const today = new Date();
   const diff = target - today;
   return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));

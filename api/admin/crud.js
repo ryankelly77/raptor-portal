@@ -226,13 +226,6 @@ module.exports = async function handler(req, res) {
   const { table, action, data, id, filters } = req.body || {};
   console.log('[CRUD REQUEST]', JSON.stringify({ table, action, id, filters, dataKeys: data ? Object.keys(data) : null }));
 
-  // Validate table
-  if (!table || !TABLE_CONFIG[table]) {
-    return res.status(400).json({
-      error: 'Invalid table. Allowed: ' + Object.keys(TABLE_CONFIG).join(', ')
-    });
-  }
-
   // Validate action
   const validActions = ['create', 'read', 'update', 'delete', 'migrate'];
   if (!action || !validActions.includes(action)) {
@@ -241,9 +234,16 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  // Handle migrations (special action, table is migration name)
+  // Handle migrations (special action, table param is migration name)
   if (action === 'migrate') {
     return handleMigration(table, supabase, res);
+  }
+
+  // Validate table (only for non-migrate actions)
+  if (!table || !TABLE_CONFIG[table]) {
+    return res.status(400).json({
+      error: 'Invalid table. Allowed: ' + Object.keys(TABLE_CONFIG).join(', ')
+    });
   }
 
   const config = TABLE_CONFIG[table];

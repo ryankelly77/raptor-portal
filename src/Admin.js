@@ -2888,6 +2888,65 @@ function ActivityLog({ projects, locations, properties }) {
           ))}
         </div>
       )}
+
+      <MigrationsPanel />
+    </div>
+  );
+}
+
+// ============================================
+// MIGRATIONS PANEL (one-time data fixes)
+// ============================================
+function MigrationsPanel() {
+  const [running, setRunning] = useState(null);
+  const [results, setResults] = useState({});
+
+  async function runMigration(name, endpoint) {
+    if (running) return;
+    setRunning(name);
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + sessionStorage.getItem('adminToken')
+        }
+      });
+      const data = await response.json();
+      setResults(prev => ({ ...prev, [name]: data }));
+      if (data.success) {
+        alert(data.message || 'Migration completed successfully!');
+      } else {
+        alert('Error: ' + (data.error || 'Unknown error'));
+      }
+    } catch (err) {
+      alert('Migration failed: ' + err.message);
+    } finally {
+      setRunning(null);
+    }
+  }
+
+  return (
+    <div className="migrations-panel" style={{ marginTop: '40px', padding: '20px', background: '#f9f9f9', borderRadius: '8px' }}>
+      <h3 style={{ margin: '0 0 15px 0', fontSize: '16px', color: '#666' }}>Data Migrations</h3>
+      <p style={{ fontSize: '13px', color: '#888', marginBottom: '15px' }}>One-time scripts to update existing data. Safe to run multiple times.</p>
+
+      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+        <button
+          className="btn-secondary"
+          onClick={() => runMigration('banner', '/api/migrate-banner-task')}
+          disabled={running === 'banner'}
+          style={{ fontSize: '13px' }}
+        >
+          {running === 'banner' ? 'Running...' : 'Add Banner Task to Phase 3'}
+        </button>
+      </div>
+
+      {results.banner && (
+        <div style={{ marginTop: '10px', fontSize: '12px', color: '#666' }}>
+          Last run: {results.banner.message || results.banner.error}
+        </div>
+      )}
     </div>
   );
 }

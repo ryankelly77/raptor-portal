@@ -779,7 +779,7 @@ function PropertyNotice({ contractorInfo, tasks = [], onRefresh, document, globa
   );
 }
 
-function BuildingAccessNotice({ tasks = [], onRefresh, globalDocuments, readOnly = false }) {
+function BuildingAccessNotice({ tasks = [], onRefresh, globalDocuments, readOnly = false, subtitle = "Please complete the following items for building access:" }) {
   const [updating, setUpdating] = useState(null);
   const [textValues, setTextValues] = useState({});
   const [coiForm, setCoiForm] = useState({ buildingName: '', careOf: '', street: '', city: '', state: '', zip: '' });
@@ -881,7 +881,8 @@ function BuildingAccessNotice({ tasks = [], onRefresh, globalDocuments, readOnly
     if (task.label.includes('badges') || task.label.includes('keyfobs')) return 'Click once access credentials are provided';
     if (task.label.includes('Emergency contact')) return 'Click once emergency contact list is provided';
     if (task.label.includes('Loading dock') || task.label.includes('freight elevator')) return 'Click once loading dock/freight elevator access is scheduled';
-    return 'Click to mark complete';
+    if (task.label.includes('enclosure configuration')) return 'I confirm the enclosure configuration and optional colors';
+    return getTaskLabel(task.label);
   };
 
   if (pmTasks.length === 0) return null;
@@ -896,7 +897,7 @@ function BuildingAccessNotice({ tasks = [], onRefresh, globalDocuments, readOnly
         </svg>
         <span>Property Manager Action Items</span>
       </div>
-      <p>Please complete the following items for building access:</p>
+      <p>{subtitle}</p>
 
       <div className="pm-action-items">
         {pmTasks.map((task, idx) => {
@@ -1193,6 +1194,11 @@ function TimelinePhase({ phase, phaseNumber, locationImages = [], surveyToken, s
           {/* Building Access & Coordination phase PM tasks */}
           {phase.title.toLowerCase().includes('building access') && (
             <BuildingAccessNotice tasks={phase.tasks} onRefresh={onRefresh} globalDocuments={globalDocuments} readOnly={readOnly} />
+          )}
+
+          {/* Equipment Ordering phase PM tasks */}
+          {phase.title.toLowerCase().includes('equipment') && phase.tasks.some(t => t.label.startsWith('[PM]')) && (
+            <BuildingAccessNotice tasks={phase.tasks} onRefresh={onRefresh} globalDocuments={globalDocuments} readOnly={readOnly} subtitle="Please confirm the following before equipment is ordered:" />
           )}
 
           {phase.surveyResults && (

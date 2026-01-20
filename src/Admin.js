@@ -1982,8 +1982,8 @@ function NewProjectModal({ locations, properties, onClose, onSave }) {
           description: 'Survey distributed to building employees to capture snack and meal preferences. Results compiled and menu customization planned based on employee favorites.',
           tasks: [
             'Survey link distributed to property management',
-            '[PM] Survey link distributed to tenants',
             '[PM-TEXT] Allow Raptor Vending to place retractable banners on site announcing the food program until machines arrive',
+            '[PM] Survey link distributed to tenants',
             'Snack preferences compiled',
             'Hot meal preferences compiled',
             'Custom menu recommendations finalized'

@@ -61,14 +61,31 @@ module.exports = async function handler(req, res) {
 
       const sortOrder = (maxTask?.sort_order || 0) + 1;
 
-      // Insert new task (after "Survey link distributed to tenants" ideally, but at end is fine)
+      // First, shift existing tasks with sort_order >= 2 up by 1
+      const { data: tasksToShift } = await supabase
+        .from('tasks')
+        .select('id, sort_order')
+        .eq('phase_id', phase.id)
+        .gte('sort_order', 2)
+        .order('sort_order', { ascending: false });
+
+      if (tasksToShift) {
+        for (const task of tasksToShift) {
+          await supabase
+            .from('tasks')
+            .update({ sort_order: task.sort_order + 1 })
+            .eq('id', task.id);
+        }
+      }
+
+      // Insert new task at position 2
       const { error: insertError } = await supabase
         .from('tasks')
         .insert({
           phase_id: phase.id,
           label: newTaskLabel,
           completed: false,
-          sort_order: 3 // After the two survey distribution tasks
+          sort_order: 2
         });
 
       if (insertError) {

@@ -2901,16 +2901,17 @@ function MigrationsPanel() {
   const [running, setRunning] = useState(null);
   const [results, setResults] = useState({});
 
-  async function runMigration(name, endpoint) {
+  async function runMigration(name, migrationKey) {
     if (running) return;
     setRunning(name);
     try {
-      const response = await fetch(endpoint, {
+      const response = await fetch('/api/admin/crud', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ' + sessionStorage.getItem('adminToken')
-        }
+        },
+        body: JSON.stringify({ table: migrationKey, action: 'migrate' })
       });
       const data = await response.json();
       setResults(prev => ({ ...prev, [name]: data }));
@@ -2934,7 +2935,7 @@ function MigrationsPanel() {
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
         <button
           className="btn-secondary"
-          onClick={() => runMigration('banner', '/api/migrate-banner-task')}
+          onClick={() => runMigration('banner', 'add-banner-task')}
           disabled={running === 'banner'}
           style={{ fontSize: '13px' }}
         >

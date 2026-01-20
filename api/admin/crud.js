@@ -124,6 +124,83 @@ function validateRequired(table, data) {
   return { valid: true };
 }
 
+// Handle migrations (one-time data fixes)
+async function handleMigration(migrationName, supabase, res) {
+  switch (migrationName) {
+    case 'add-banner-task': {
+      // Find all Phase 3s (Employee Preference Survey)
+      const { data: phases, error: phasesError } = await supabase
+        .from('phases')
+        .select('id, project_id, title')
+        .eq('phase_number', 3);
+
+      if (phasesError) throw phasesError;
+
+      const newTaskLabel = '[PM-TEXT] Allow Raptor Vending to place retractable banners on site announcing the food program until machines arrive';
+      let added = 0;
+      let skipped = 0;
+
+      for (const phase of phases) {
+        // Check if task already exists
+        const { data: existingTasks, error: tasksError } = await supabase
+          .from('tasks')
+          .select('id, label')
+          .eq('phase_id', phase.id)
+          .ilike('label', '%retractable banners%');
+
+        if (tasksError) throw tasksError;
+
+        if (existingTasks && existingTasks.length > 0) {
+          skipped++;
+          continue;
+        }
+
+        // Shift existing tasks with sort_order >= 2 up by 1
+        const { data: tasksToShift } = await supabase
+          .from('tasks')
+          .select('id, sort_order')
+          .eq('phase_id', phase.id)
+          .gte('sort_order', 2)
+          .order('sort_order', { ascending: false });
+
+        if (tasksToShift) {
+          for (const task of tasksToShift) {
+            await supabase
+              .from('tasks')
+              .update({ sort_order: task.sort_order + 1 })
+              .eq('id', task.id);
+          }
+        }
+
+        // Insert new task at position 2
+        const { error: insertError } = await supabase
+          .from('tasks')
+          .insert({
+            phase_id: phase.id,
+            label: newTaskLabel,
+            completed: false,
+            sort_order: 2
+          });
+
+        if (insertError) {
+          console.error(`Failed to add task to phase ${phase.id}:`, insertError);
+        } else {
+          added++;
+        }
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: `Added banner task to ${added} phases, skipped ${skipped} (already had it)`,
+        total_phases: phases.length
+      });
+    }
+
+    default:
+      return res.status(400).json({ error: 'Unknown migration: ' + migrationName });
+  }
+}
+
 module.exports = async function handler(req, res) {
   // Only POST allowed for this consolidated endpoint
   if (req.method !== 'POST') {
@@ -157,11 +234,16 @@ module.exports = async function handler(req, res) {
   }
 
   // Validate action
-  const validActions = ['create', 'read', 'update', 'delete'];
+  const validActions = ['create', 'read', 'update', 'delete', 'migrate'];
   if (!action || !validActions.includes(action)) {
     return res.status(400).json({
       error: 'Invalid action. Allowed: ' + validActions.join(', ')
     });
+  }
+
+  // Handle migrations (special action, table is migration name)
+  if (action === 'migrate') {
+    return handleMigration(table, supabase, res);
   }
 
   const config = TABLE_CONFIG[table];

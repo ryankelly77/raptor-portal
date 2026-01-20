@@ -2791,6 +2791,13 @@ body {
 }
 .task-item-enclosure {
   flex-wrap: wrap;
+  position: relative;
+  padding-right: 30px;
+}
+.task-item-enclosure > .btn-delete-small {
+  position: absolute;
+  right: 0;
+  top: 8px;
 }
 .task-item-enclosure .admin-enclosure-inputs,
 .task-item-enclosure .admin-equipment-inputs,

@@ -2073,6 +2073,7 @@ function NewProjectModal({ locations, properties, onClose, onSave }) {
           tasks: [
             '[ADMIN-EQUIPMENT] SmartFridge™ and SmartCooker™ ordered',
             '[ADMIN-ENCLOSURE] Enclosure ordered',
+            '[PM] I confirm the enclosure configuration and optional colors',
             '[ADMIN-DELIVERY] Delivery scheduled',
             'All equipment delivered to site and prepped for health inspection',
             'City Health Inspection scheduled',
@@ -2988,11 +2989,24 @@ function MigrationsPanel() {
         >
           {running === 'banner' ? 'Running...' : 'Add Banner Task to Phase 3'}
         </button>
+        <button
+          className="btn-secondary"
+          onClick={() => runMigration('enclosure', 'add-enclosure-confirm-task')}
+          disabled={running === 'enclosure'}
+          style={{ fontSize: '13px' }}
+        >
+          {running === 'enclosure' ? 'Running...' : 'Add Enclosure Confirm to Phase 6'}
+        </button>
       </div>
 
       {results.banner && (
         <div style={{ marginTop: '10px', fontSize: '12px', color: '#666' }}>
-          Last run: {results.banner.message || results.banner.error}
+          Banner: {results.banner.message || results.banner.error}
+        </div>
+      )}
+      {results.enclosure && (
+        <div style={{ marginTop: '10px', fontSize: '12px', color: '#666' }}>
+          Enclosure: {results.enclosure.message || results.enclosure.error}
         </div>
       )}
     </div>

@@ -196,6 +196,75 @@ async function handleMigration(migrationName, supabase, res) {
       });
     }
 
+    case 'add-enclosure-confirm-task': {
+      // Find all Phase 6s (Equipment Ordering & Delivery)
+      const { data: phases, error: phasesError } = await supabase
+        .from('phases')
+        .select('id, project_id, title')
+        .eq('phase_number', 6);
+
+      if (phasesError) throw phasesError;
+
+      const newTaskLabel = '[PM] I confirm the enclosure configuration and optional colors';
+      let added = 0;
+      let skipped = 0;
+
+      for (const phase of phases) {
+        // Check if task already exists
+        const { data: existingTasks, error: tasksError } = await supabase
+          .from('tasks')
+          .select('id, label')
+          .eq('phase_id', phase.id)
+          .ilike('label', '%confirm the enclosure%');
+
+        if (tasksError) throw tasksError;
+
+        if (existingTasks && existingTasks.length > 0) {
+          skipped++;
+          continue;
+        }
+
+        // Shift existing tasks with sort_order >= 3 up by 1
+        const { data: tasksToShift } = await supabase
+          .from('tasks')
+          .select('id, sort_order')
+          .eq('phase_id', phase.id)
+          .gte('sort_order', 3)
+          .order('sort_order', { ascending: false });
+
+        if (tasksToShift) {
+          for (const task of tasksToShift) {
+            await supabase
+              .from('tasks')
+              .update({ sort_order: task.sort_order + 1 })
+              .eq('id', task.id);
+          }
+        }
+
+        // Insert new task at position 3
+        const { error: insertError } = await supabase
+          .from('tasks')
+          .insert({
+            phase_id: phase.id,
+            label: newTaskLabel,
+            completed: false,
+            sort_order: 3
+          });
+
+        if (insertError) {
+          console.error(`Failed to add task to phase ${phase.id}:`, insertError);
+        } else {
+          added++;
+        }
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: `Added enclosure confirm task to ${added} phases, skipped ${skipped} (already had it)`,
+        total_phases: phases.length
+      });
+    }
+
     default:
       return res.status(400).json({ error: 'Unknown migration: ' + migrationName });
   }

@@ -117,7 +117,7 @@ export async function fetchProjectByToken(token) {
     locationImages: location?.images || [],
     propertyName: property?.name || '',
     address: property ? `${property.address}, ${property.city}, ${property.state} ${property.zip}` : '',
-    employeeCount: location?.employee_count || property?.total_employees || 0,
+    employeeCount: property?.total_employees || 0,
     configuration: project.configuration,
     projectManager: {
       name: project.raptor_pm_name,

@@ -81,6 +81,32 @@ const Logo = ({ variant = 'light', height = 120 }) => (
 // ============================================
 // SHARED COMPONENTS
 // ============================================
+
+function WhatsThisLink({ text, imageUrl }) {
+  const [showPopup, setShowPopup] = useState(false);
+
+  return (
+    <>
+      <button
+        type="button"
+        className="whats-this-btn"
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowPopup(true); }}
+      >
+        What's this?
+      </button>
+      {showPopup && (
+        <div className="whats-this-overlay" onClick={() => setShowPopup(false)}>
+          <div className="whats-this-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="whats-this-close" onClick={() => setShowPopup(false)}>×</button>
+            <p>{text}</p>
+            {imageUrl && <img src={imageUrl} alt="Example" className="whats-this-img" />}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 function Header({ project, showLogo = true }) {
   return (
     <header className="widget-header">
@@ -387,9 +413,10 @@ function EnclosureInfoBox({ enclosureLabel, enclosureType, isCustomColor }) {
   );
 }
 
-function SurveyCallToAction({ surveyToken, surveyClicks, surveyCompletions, pmTask, onTaskUpdate, readOnly = false }) {
+function SurveyCallToAction({ surveyToken, surveyClicks, surveyCompletions, pmTask, pmTextTasks = [], onTaskUpdate, readOnly = false }) {
   const [copied, setCopied] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [textValues, setTextValues] = useState({});
   const baseUrl = window.location.origin;
   const surveyUrl = surveyToken
     ? `${baseUrl}/survey/${surveyToken}`
@@ -469,6 +496,65 @@ function SurveyCallToAction({ surveyToken, surveyClicks, surveyCompletions, pmTa
             </span>
           </div>
         )}
+
+        {/* PM-TEXT Action Items (like banner permission) */}
+        {pmTextTasks.map(task => {
+          const displayLabel = task.label.replace('[PM-TEXT] ', '');
+          const isBannerTask = task.label.toLowerCase().includes('banner');
+          const canSubmit = textValues[task.id]?.trim();
+
+          const handleTextComplete = async () => {
+            if (readOnly || updating || task.completed || !canSubmit) return;
+            setUpdating(true);
+            try {
+              await updateTask(task.id, { completed: true, pm_text_response: textValues[task.id].trim() });
+              if (onTaskUpdate) onTaskUpdate();
+            } catch (err) {
+              console.error('Error updating task:', err);
+            } finally {
+              setUpdating(false);
+            }
+          };
+
+          return (
+            <div key={task.id} className={`pm-action-item pm-text-task ${task.completed ? 'completed' : ''}`}>
+              <div
+                className={`pm-checkbox ${task.completed ? 'checked' : ''}`}
+                onClick={handleTextComplete}
+                style={{ cursor: canSubmit && !task.completed ? 'pointer' : 'default' }}
+              >
+                {task.completed && (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="14" height="14">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                )}
+              </div>
+              <div className="pm-text-task-content">
+                <span className="pm-action-label">{displayLabel}</span>
+                {!task.completed ? (
+                  <div className="pm-text-input-wrapper">
+                    <input
+                      type="text"
+                      className="pm-text-inline-input"
+                      placeholder={isBannerTask ? "Yes / No / Lobby only..." : "Enter response"}
+                      value={textValues[task.id] || ''}
+                      onChange={(e) => setTextValues({ ...textValues, [task.id]: e.target.value })}
+                      disabled={readOnly}
+                    />
+                    {isBannerTask && (
+                      <WhatsThisLink
+                        text="Raptor Vending uses retractable banners (33&quot; x 81&quot;) to announce the upcoming food program to employees before machines arrive. This builds awareness and excitement. Please confirm if banner placement is allowed on-site (e.g. 'Yes' or 'No - lobby only')."
+                        imageUrl="/banner-example.jpg"
+                      />
+                    )}
+                  </div>
+                ) : (
+                  <div className="pm-text-value">{task.pm_text_response}</div>
+                )}
+              </div>
+            </div>
+          );
+        })}
 
         {(surveyClicks > 0 || surveyCompletions > 0) && (
           <div className="survey-stats">
@@ -901,14 +987,22 @@ function BuildingAccessNotice({ tasks = [], onRefresh, globalDocuments, readOnly
                         </div>
                       </div>
                     ) : (
-                      <input
-                        type="text"
-                        className="pm-text-inline-input"
-                        placeholder="Enter value"
-                        value={textValues[task.id] || ''}
-                        onChange={(e) => setTextValues({ ...textValues, [task.id]: e.target.value })}
-                        disabled={isDisabled}
-                      />
+                      <div className="pm-text-input-wrapper">
+                        <input
+                          type="text"
+                          className="pm-text-inline-input"
+                          placeholder="Enter response"
+                          value={textValues[task.id] || ''}
+                          onChange={(e) => setTextValues({ ...textValues, [task.id]: e.target.value })}
+                          disabled={isDisabled}
+                        />
+                        {task.label.toLowerCase().includes('banner') && (
+                          <WhatsThisLink
+                            text="Raptor Vending uses retractable banners (33&quot; x 81&quot;) to announce the upcoming food program to employees before machines arrive. This builds awareness and excitement. Please confirm if banner placement is allowed on-site (e.g. 'Yes' or 'No - lobby only')."
+                            imageUrl="/banner-example.jpg"
+                          />
+                        )}
+                      </div>
                     )
                   ) : (
                     <div className="pm-text-value">
@@ -1086,6 +1180,7 @@ function TimelinePhase({ phase, phaseNumber, locationImages = [], surveyToken, s
               surveyClicks={surveyClicks}
               surveyCompletions={surveyCompletions}
               pmTask={phase.tasks.find(t => t.label.startsWith('[PM]'))}
+              pmTextTasks={phase.tasks.filter(t => t.label.startsWith('[PM-TEXT]'))}
               onTaskUpdate={onRefresh}
               readOnly={readOnly}
             />

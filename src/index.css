@@ -3100,7 +3100,74 @@ body {
   color: var(--text-secondary);
 }
 
-/* What's this link */
+/* What's this link/modal */
+.whats-this-btn {
+  background: none;
+  border: none;
+  color: #1565C0;
+  font-size: 0.85em;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  white-space: nowrap;
+  margin-left: 10px;
+}
+.whats-this-btn:hover {
+  color: #0D47A1;
+}
+.whats-this-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.whats-this-modal {
+  position: relative;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 320px;
+  width: 90%;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+.whats-this-modal p {
+  font-size: 0.95em;
+  color: #444;
+  margin: 0 0 15px 0;
+  line-height: 1.5;
+}
+.whats-this-modal .whats-this-img {
+  width: 100%;
+  border-radius: 4px;
+}
+.whats-this-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 1.5em;
+  cursor: pointer;
+  color: #888;
+  line-height: 1;
+  padding: 0;
+}
+.whats-this-close:hover {
+  color: #333;
+}
+.pm-text-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+/* Legacy - keep for admin */
 .whats-this-link {
   background: none;
   border: none;

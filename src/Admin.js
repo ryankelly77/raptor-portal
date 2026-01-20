@@ -1225,7 +1225,6 @@ function PhaseEditor({ phase, phaseNumber, project, onUpdatePhase, onUpdateTask,
                       }}
                     />
                   )}
-                  <button className="btn-delete-small" onClick={() => onDeleteTask(task.id)}>×</button>
                   {isAdminSpeed && (
                     <SpeedInputs task={task} onRefresh={onRefresh} />
                   )}
@@ -1241,9 +1240,13 @@ function PhaseEditor({ phase, phaseNumber, project, onUpdatePhase, onUpdateTask,
                   {isAdminDoc && task.completed && (
                     <TaskDocUpload task={task} onRefresh={onRefresh} />
                   )}
-                  {isPmText && (
+                  {isPmText && task.label.includes('COI') && (
                     <COIInputs task={task} onRefresh={onRefresh} />
                   )}
+                  {isPmText && !task.label.includes('COI') && (
+                    <PmTextResponse task={task} onRefresh={onRefresh} />
+                  )}
+                  <button className="btn-delete-small" onClick={() => onDeleteTask(task.id)}>×</button>
                 </div>
               );
             })}
@@ -1606,6 +1609,50 @@ function COIInputs({ task, onRefresh }) {
           style={{ width: '100px' }}
         />
       </div>
+    </div>
+  );
+}
+
+// ============================================
+// PM TEXT RESPONSE (simple text input for non-COI PM-TEXT tasks)
+// ============================================
+function PmTextResponse({ task, onRefresh }) {
+  const [value, setValue] = useState(task.pm_text_response || '');
+  const [showInfo, setShowInfo] = useState(false);
+
+  const saveValue = async () => {
+    await updateTask(task.id, { pm_text_response: value });
+    onRefresh();
+  };
+
+  const isBannerTask = task.label.includes('banner');
+
+  return (
+    <div className="pm-text-response">
+      <div className="pm-text-response-row">
+        <input
+          type="text"
+          placeholder="PM response..."
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onBlur={saveValue}
+          className="pm-text-input"
+        />
+        {isBannerTask && (
+          <button
+            type="button"
+            className="whats-this-link"
+            onClick={() => setShowInfo(!showInfo)}
+          >
+            What's this?
+          </button>
+        )}
+      </div>
+      {showInfo && isBannerTask && (
+        <div className="whats-this-info">
+          Raptor Vending uses retractable banners to announce the upcoming food program to employees before machines arrive. This helps build awareness and excitement. The PM should confirm if banner placement is allowed on-site.
+        </div>
+      )}
     </div>
   );
 }

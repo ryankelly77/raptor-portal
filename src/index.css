@@ -87,7 +87,7 @@ body {
 .phase-title { font-weight: 600; font-size: 1.05em; }
 .approximate-badge { font-size: 0.7em; padding: 3px 8px; background: var(--info-blue); color: white; border-radius: 10px; }
 .phase-status { font-size: 0.75em; padding: 5px 12px; border-radius: 15px; font-weight: 500; text-transform: uppercase; }
-.phase-status.completed { background: rgba(255,88,15,0.1); color: var(--raptor-orange); }
+.phase-status.completed { background: rgba(76,175,80,0.1); color: var(--success-green); }
 .phase-status.in-progress { background: var(--raptor-orange); color: white; }
 .phase-status.pending { background: var(--border-color); color: var(--text-muted); }
 .phase-dates { font-size: 0.85em; color: var(--text-secondary); margin-bottom: 12px; }

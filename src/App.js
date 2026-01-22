@@ -649,10 +649,12 @@ function PropertyNotice({ contractorInfo, tasks = [], onRefresh, document, globa
   };
 
   const getPromptForTask = (task) => {
+    // Only match specific known tasks, otherwise show actual label
     if (task.label.includes('quotes')) return 'Click here once you\'ve obtained contractor quotes';
-    if (task.label.includes('installed')) return 'Click here once all electrical and optional networking is installed';
+    if (task.label.includes('electrical') && task.label.includes('networking')) return 'Click here once all electrical and optional networking is installed';
     if (task.label.startsWith('[PM-DATE]')) return 'Click here once contractor is selected and install is scheduled';
-    return 'Click to mark complete';
+    // Default: show the actual task label
+    return getTaskLabel(task.label);
   };
 
   return (

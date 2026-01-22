@@ -1201,6 +1201,15 @@ function TimelinePhase({ phase, phaseNumber, locationImages = [], surveyToken, s
             <BuildingAccessNotice tasks={phase.tasks} onRefresh={onRefresh} globalDocuments={globalDocuments} readOnly={readOnly} subtitle="Please confirm the following before equipment is ordered:" />
           )}
 
+          {/* Generic PM action items for any other phase with PM tasks */}
+          {!phase.title.toLowerCase().includes('survey') &&
+           !phase.title.toLowerCase().includes('building access') &&
+           !phase.title.toLowerCase().includes('equipment') &&
+           !phase.propertyResponsibility &&
+           phase.tasks.some(t => t.label.startsWith('[PM]') || t.label.startsWith('[PM-TEXT]')) && (
+            <BuildingAccessNotice tasks={phase.tasks} onRefresh={onRefresh} globalDocuments={globalDocuments} readOnly={readOnly} subtitle="Please complete the following:" />
+          )}
+
           {phase.surveyResults && (
             <SurveyResults results={phase.surveyResults} />
           )}

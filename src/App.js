@@ -649,12 +649,8 @@ function PropertyNotice({ contractorInfo, tasks = [], onRefresh, document, globa
   };
 
   const getPromptForTask = (task) => {
-    // Only match specific known tasks, otherwise show actual label
-    if (task.label.includes('quotes')) return 'Click here once you\'ve obtained contractor quotes';
-    if (task.label.includes('electrical') && task.label.includes('networking')) return 'Click here once all electrical and optional networking is installed';
-    if (task.label.startsWith('[PM-DATE]')) return 'Click here once contractor is selected and install is scheduled';
-    // Default: show the actual task label
-    return getTaskLabel(task.label);
+    // Always use "Click here once [task label]" format
+    return `Click here once ${getTaskLabel(task.label).toLowerCase()}`;
   };
 
   return (
@@ -879,12 +875,8 @@ function BuildingAccessNotice({ tasks = [], onRefresh, globalDocuments, readOnly
   };
 
   const getPromptForTask = (task) => {
-    if (task.label.includes('vendor list')) return 'Click once Raptor Vending is added to approved vendor list';
-    if (task.label.includes('badges') || task.label.includes('keyfobs')) return 'Click once access credentials are provided';
-    if (task.label.includes('Emergency contact')) return 'Click once emergency contact list is provided';
-    if (task.label.includes('Loading dock') || task.label.includes('freight elevator')) return 'Click once loading dock/freight elevator access is scheduled';
-    if (task.label.includes('enclosure configuration')) return 'I confirm the enclosure configuration and optional colors';
-    return getTaskLabel(task.label);
+    // Always use "Click here once [task label]" format
+    return `Click here once ${getTaskLabel(task.label).toLowerCase()}`;
   };
 
   if (pmTasks.length === 0) return null;

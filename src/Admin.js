@@ -538,6 +538,44 @@ function ProjectEditor({ project, details, locations, properties, managers, onBa
     try {
       const maxSort = details.phases.find(p => p.id === phaseId)?.tasks?.length || 0;
       await createTask({ phase_id: phaseId, label, completed: false, sort_order: maxSort + 1 });
+
+      // Fetch fresh data to recalculate
+      const updatedDetails = await fetchProjectDetails(project.id);
+
+      // Recalculate phase statuses based on task completion
+      for (const phase of updatedDetails.phases) {
+        const phaseTasks = phase.tasks || [];
+        console.log(`[handleAddTask] Phase ${phase.id}: ${phaseTasks.length} tasks, current status: "${phase.status}"`);
+        if (phaseTasks.length === 0) continue;
+
+        const completedCount = phaseTasks.filter(t => t.completed === true).length;
+        const totalCount = phaseTasks.length;
+        console.log(`[handleAddTask] Phase ${phase.id}: ${completedCount}/${totalCount} completed`);
+
+        let newStatus;
+        if (completedCount === 0) {
+          newStatus = 'pending';
+        } else if (completedCount === totalCount) {
+          newStatus = 'completed';
+        } else {
+          newStatus = 'in-progress';
+        }
+
+        console.log(`[handleAddTask] Phase ${phase.id}: calculated status = "${newStatus}", current = "${phase.status}"`);
+        if (phase.status !== newStatus) {
+          console.log(`[handleAddTask] UPDATING phase ${phase.id} status: "${phase.status}" -> "${newStatus}"`);
+          await updatePhase(phase.id, { status: newStatus });
+        }
+      }
+
+      // Recalculate overall progress
+      let total = 0, done = 0;
+      updatedDetails.phases.forEach(p => {
+        p.tasks?.forEach(t => { total++; if (t.completed) done++; });
+      });
+      const newProgress = total > 0 ? Math.round((done / total) * 100) : 0;
+      await updateProject(project.id, { overall_progress: newProgress });
+
       onRefresh();
     } catch (err) {
       console.error('Error adding task:', err);
@@ -548,6 +586,28 @@ function ProjectEditor({ project, details, locations, properties, managers, onBa
     if (!window.confirm('Delete this task?')) return;
     try {
       await deleteTask(taskId);
+
+      // Recalculate phase statuses and overall progress
+      const updatedDetails = await fetchProjectDetails(project.id);
+      let total = 0, done = 0;
+      for (const phase of updatedDetails.phases) {
+        const phaseTasks = phase.tasks || [];
+        phaseTasks.forEach(t => { total++; if (t.completed) done++; });
+
+        if (phaseTasks.length === 0) continue;
+        const completedCount = phaseTasks.filter(t => t.completed).length;
+        let newStatus;
+        if (completedCount === 0) newStatus = 'pending';
+        else if (completedCount === phaseTasks.length) newStatus = 'completed';
+        else newStatus = 'in-progress';
+
+        if (phase.status !== newStatus) {
+          await updatePhase(phase.id, { status: newStatus });
+        }
+      }
+      const newProgress = total > 0 ? Math.round((done / total) * 100) : 0;
+      await updateProject(project.id, { overall_progress: newProgress });
+
       onRefresh();
     } catch (err) {
       console.error('Error deleting task:', err);
@@ -798,6 +858,7 @@ function PhaseEditor({ phase, phaseNumber, project, onUpdatePhase, onUpdateTask,
     document_label: phase.document_label || ''
   });
   const [newTaskLabel, setNewTaskLabel] = useState('');
+  const [newTaskIsPm, setNewTaskIsPm] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -1257,17 +1318,29 @@ function PhaseEditor({ phase, phaseNumber, project, onUpdatePhase, onUpdateTask,
                 onChange={e => setNewTaskLabel(e.target.value)}
                 onKeyDown={e => {
                   if (e.key === 'Enter' && newTaskLabel.trim()) {
-                    onAddTask(phase.id, newTaskLabel.trim());
+                    const label = newTaskIsPm ? `[PM] ${newTaskLabel.trim()}` : newTaskLabel.trim();
+                    onAddTask(phase.id, label);
                     setNewTaskLabel('');
+                    setNewTaskIsPm(false);
                   }
                 }}
               />
+              <label className="pm-task-toggle" title="Assign to Property Manager">
+                <input
+                  type="checkbox"
+                  checked={newTaskIsPm}
+                  onChange={e => setNewTaskIsPm(e.target.checked)}
+                />
+                <span>PM</span>
+              </label>
               <button
                 className="btn-add-small"
                 onClick={() => {
                   if (newTaskLabel.trim()) {
-                    onAddTask(phase.id, newTaskLabel.trim());
+                    const label = newTaskIsPm ? `[PM] ${newTaskLabel.trim()}` : newTaskLabel.trim();
+                    onAddTask(phase.id, label);
                     setNewTaskLabel('');
+                    setNewTaskIsPm(false);
                   }
                 }}
               >

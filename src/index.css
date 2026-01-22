@@ -2171,6 +2171,24 @@ body {
   gap: 12px;
   margin-left: auto;
   margin-right: 8px;
+  max-width: 100%;
+}
+
+/* Task item with speed inputs needs to wrap for warning */
+.task-item:has(.admin-speed-inputs) {
+  flex-wrap: wrap;
+  position: relative;
+  padding-right: 30px;
+}
+.task-item:has(.admin-speed-inputs) .admin-speed-inputs {
+  flex-basis: 100%;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+.task-item:has(.admin-speed-inputs) > .btn-delete-small {
+  position: absolute;
+  right: 0;
+  top: 8px;
 }
 .speed-input-group {
   display: flex;
@@ -2216,9 +2234,40 @@ body {
 }
 .admin-speed-warning span {
   line-height: 1.4;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
-.add-task-row { display: flex; gap: 10px; margin-top: 12px; }
-.add-task-row input { flex: 1; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 5px; }
+.add-task-row { display: flex; gap: 10px; margin-top: 12px; align-items: center; }
+.add-task-row input:not([type="checkbox"]) {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  font-size: 0.9em;
+}
+.add-task-row input:not([type="checkbox"]):focus {
+  outline: none;
+  border-color: var(--raptor-orange);
+}
+.pm-task-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 5px;
+  background: #f5f5f5;
+  font-size: 0.85em;
+  font-weight: 500;
+  color: #666;
+  border: 1px solid var(--border-color);
+}
+.pm-task-toggle:has(input:checked) {
+  background: #FFF3E0;
+  color: #E65100;
+  border-color: #FFCC80;
+}
+.pm-task-toggle input { width: 14px; height: 14px; margin: 0; }
 
 /* Equipment */
 .equipment-list { display: flex; flex-direction: column; gap: 10px; }

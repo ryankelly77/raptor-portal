@@ -144,6 +144,7 @@ module.exports = async function handler(req, res) {
   }
 
   const forceResend = req.body?.force === true;
+  const singleProjectId = req.body?.projectId; // Optional: send to single project only
 
   try {
     // Fetch the email template for CC emails
@@ -151,7 +152,7 @@ module.exports = async function handler(req, res) {
     const ccEmails = template?.cc_emails || DEFAULT_CC_EMAILS;
 
     // Fetch projects with reminders enabled, including location/property/PM info
-    const { data: projects, error: projectsError } = await supabase
+    let query = supabase
       .from('projects')
       .select(`
         id,
@@ -180,8 +181,16 @@ module.exports = async function handler(req, res) {
             sort_order
           )
         )
-      `)
-      .eq('email_reminders_enabled', true);
+      `);
+
+    // If single project, filter by ID; otherwise filter by reminders enabled
+    if (singleProjectId) {
+      query = query.eq('id', singleProjectId);
+    } else {
+      query = query.eq('email_reminders_enabled', true);
+    }
+
+    const { data: projects, error: projectsError } = await query;
 
     if (projectsError) {
       throw new Error(`Database error: ${projectsError.message}`);

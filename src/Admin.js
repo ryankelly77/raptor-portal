@@ -786,11 +786,38 @@ function ProjectEditor({ project, details, locations, properties, managers, onBa
                 </button>
               </div>
               <div><strong>Public Token:</strong> <code>{project.public_token}</code></div>
-              <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <strong>Email Reminders:</strong>{' '}
                 <span className={`reminder-status ${project.email_reminders_enabled ? 'on' : 'off'}`}>
                   {project.email_reminders_enabled ? 'ON' : 'OFF'}
                 </span>
+                <button
+                  className="btn-secondary"
+                  style={{ fontSize: '12px', padding: '4px 10px' }}
+                  onClick={async () => {
+                    if (!window.confirm('Send reminder email for this project now?')) return;
+                    try {
+                      const response = await fetch('/api/send-reminders', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': 'Bearer ' + sessionStorage.getItem('adminToken')
+                        },
+                        body: JSON.stringify({ projectId: project.id, force: true })
+                      });
+                      const data = await response.json();
+                      if (data.success && data.results?.[0]?.status === 'sent') {
+                        alert(`Reminder sent to ${data.results[0].to}`);
+                      } else {
+                        alert('Error: ' + (data.results?.[0]?.error || data.error || 'Failed to send'));
+                      }
+                    } catch (err) {
+                      alert('Failed: ' + err.message);
+                    }
+                  }}
+                >
+                  Send Reminder Now
+                </button>
               </div>
             </div>
           )}

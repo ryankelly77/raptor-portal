@@ -121,14 +121,20 @@ function generateReminderEmail(project, allTasks, incompleteCount, propertyName,
   `;
 }
 
+const { requireAdmin } = require('./lib/auth');
+
 module.exports = async function handler(req, res) {
-  // Verify cron secret for all calls - no bypass allowed
-  const cronSecret = req.headers['x-cron-secret'] || req.headers.authorization?.replace('Bearer ', '');
-  if (!process.env.CRON_SECRET) {
-    console.error('CRON_SECRET not configured');
-    return res.status(500).json({ error: 'Service not configured' });
+  // Allow either CRON_SECRET (for scheduled jobs) or admin token (for manual trigger)
+  const cronSecret = req.headers['x-cron-secret'];
+  const isCronAuth = cronSecret && process.env.CRON_SECRET && cronSecret === process.env.CRON_SECRET;
+
+  let isAdminAuth = false;
+  if (!isCronAuth) {
+    const auth = requireAdmin(req);
+    isAdminAuth = auth.authenticated;
   }
-  if (cronSecret !== process.env.CRON_SECRET) {
+
+  if (!isCronAuth && !isAdminAuth) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 

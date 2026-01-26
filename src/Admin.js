@@ -3028,6 +3028,7 @@ function ActivityLog({ projects, locations, properties }) {
 function MigrationsPanel() {
   const [running, setRunning] = useState(null);
   const [results, setResults] = useState({});
+  const [reminderResult, setReminderResult] = useState(null);
 
   async function runMigration(name, migrationKey) {
     if (running) return;
@@ -3055,9 +3056,72 @@ function MigrationsPanel() {
     }
   }
 
+  async function sendReminders() {
+    if (running) return;
+    if (!window.confirm('This will send reminder emails to all property managers with pending tasks. Continue?')) return;
+    setRunning('reminders');
+    setReminderResult(null);
+    try {
+      const response = await fetch('/api/send-reminders', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + sessionStorage.getItem('adminToken')
+        }
+      });
+      const data = await response.json();
+      setReminderResult(data);
+      if (data.success) {
+        const sentCount = data.results?.filter(r => r.status === 'sent').length || 0;
+        alert(`Reminders sent successfully! ${sentCount} email(s) sent.`);
+      } else {
+        alert('Error: ' + (data.error || 'Unknown error'));
+      }
+    } catch (err) {
+      alert('Failed to send reminders: ' + err.message);
+      setReminderResult({ error: err.message });
+    } finally {
+      setRunning(null);
+    }
+  }
+
   return (
     <div className="migrations-panel" style={{ marginTop: '40px', padding: '20px', background: '#f9f9f9', borderRadius: '8px' }}>
-      <h3 style={{ margin: '0 0 15px 0', fontSize: '16px', color: '#666' }}>Data Migrations</h3>
+      <h3 style={{ margin: '0 0 15px 0', fontSize: '16px', color: '#666' }}>Admin Tools</h3>
+
+      {/* Email Reminders */}
+      <div style={{ marginBottom: '20px', paddingBottom: '20px', borderBottom: '1px solid #ddd' }}>
+        <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#666' }}>Email Reminders</h4>
+        <p style={{ fontSize: '13px', color: '#888', marginBottom: '10px' }}>
+          Weekly reminders are sent automatically every Monday at 10 AM ET. Use this to send manually.
+        </p>
+        <button
+          className="btn-primary"
+          onClick={sendReminders}
+          disabled={running === 'reminders'}
+          style={{ fontSize: '13px' }}
+        >
+          {running === 'reminders' ? 'Sending...' : 'Send Reminder Emails Now'}
+        </button>
+        {reminderResult && (
+          <div style={{ marginTop: '10px', fontSize: '12px', color: '#666' }}>
+            {reminderResult.error ? (
+              <span style={{ color: '#c00' }}>Error: {reminderResult.error}</span>
+            ) : (
+              <div>
+                <strong>Results:</strong>
+                {reminderResult.results?.map((r, i) => (
+                  <div key={i} style={{ marginLeft: '10px' }}>
+                    {r.project}: {r.status === 'sent' ? `✓ Sent to ${r.to}` : `✗ ${r.error || r.status}`}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Data Migrations */}
+      <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#666' }}>Data Migrations</h4>
       <p style={{ fontSize: '13px', color: '#888', marginBottom: '15px' }}>One-time scripts to update existing data. Safe to run multiple times.</p>
 
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>

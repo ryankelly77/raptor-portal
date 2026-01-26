@@ -29,7 +29,7 @@ async function getEmailTemplate(templateKey) {
   return data;
 }
 
-async function sendEmail(to, subject, html, ccEmails) {
+async function sendEmail(to, subject, html, ccEmails, projectId = null) {
   const form = new URLSearchParams();
   form.append('from', FROM_EMAIL);
   form.append('to', to);
@@ -38,6 +38,16 @@ async function sendEmail(to, subject, html, ccEmails) {
   }
   form.append('subject', subject);
   form.append('html', html);
+
+  // Enable open and click tracking
+  form.append('o:tracking', 'yes');
+  form.append('o:tracking-clicks', 'yes');
+  form.append('o:tracking-opens', 'yes');
+
+  // Add project ID as custom variable for webhook correlation
+  if (projectId) {
+    form.append('v:project_id', projectId);
+  }
 
   const response = await fetch(`https://api.mailgun.net/v3/${MAILGUN_DOMAIN}/messages`, {
     method: 'POST',
@@ -246,7 +256,8 @@ module.exports = async function handler(req, res) {
           recipientEmail,
           `Reminder: ${incompleteCount} item${incompleteCount !== 1 ? 's' : ''} remaining for ${propertyName}`,
           html,
-          ccEmails
+          ccEmails,
+          project.id
         );
 
         // Update last_reminder_sent

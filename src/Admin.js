@@ -886,6 +886,8 @@ function PhaseEditor({ phase, phaseNumber, project, onUpdatePhase, onUpdateTask,
   });
   const [newTaskLabel, setNewTaskLabel] = useState('');
   const [newTaskIsPm, setNewTaskIsPm] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState(null);
+  const [editingTaskLabel, setEditingTaskLabel] = useState('');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -895,6 +897,29 @@ function PhaseEditor({ phase, phaseNumber, project, onUpdatePhase, onUpdateTask,
 
   const isSiteAssessment = phase.title.toLowerCase().includes('site assessment');
   const documents = phase.documents || [];
+
+  async function handleSaveTaskEdit() {
+    if (!editingTaskLabel.trim() || !editingTaskId) return;
+    try {
+      await updateTask(editingTaskId, { label: editingTaskLabel.trim() });
+      setEditingTaskId(null);
+      setEditingTaskLabel('');
+      onRefresh();
+    } catch (err) {
+      console.error('Error updating task:', err);
+      alert('Failed to update task');
+    }
+  }
+
+  function startEditingTask(task) {
+    setEditingTaskId(task.id);
+    setEditingTaskLabel(task.label);
+  }
+
+  function cancelEditingTask() {
+    setEditingTaskId(null);
+    setEditingTaskLabel('');
+  }
 
   async function handleSave() {
     setSaving(true);
@@ -1291,17 +1316,41 @@ function PhaseEditor({ phase, phaseNumber, project, onUpdatePhase, onUpdateTask,
                 .replace('[PM-DATE] ', '')
                 .replace('[PM-TEXT] ', '');
 
+              const isEditing = editingTaskId === task.id;
+
               return (
                 <div key={task.id} className={`task-item ${isAdminEnclosure || isAdminEquipment || isAdminDelivery ? 'task-item-enclosure' : ''}`}>
                   <input
                     type="checkbox"
                     checked={task.completed}
                     onChange={e => onUpdateTask(task.id, e.target.checked)}
+                    disabled={isEditing}
                   />
-                  <span className={task.completed ? 'completed' : ''}>
-                    {isPmTask && <span className="pm-badge">PM</span>}
-                    {displayLabel}
-                  </span>
+                  {isEditing ? (
+                    <div className="task-edit-row">
+                      <input
+                        type="text"
+                        className="task-edit-input"
+                        value={editingTaskLabel}
+                        onChange={e => setEditingTaskLabel(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') handleSaveTaskEdit();
+                          if (e.key === 'Escape') cancelEditingTask();
+                        }}
+                        autoFocus
+                      />
+                      <button className="btn-save-small" onClick={handleSaveTaskEdit}>✓</button>
+                      <button className="btn-cancel-small" onClick={cancelEditingTask}>✗</button>
+                    </div>
+                  ) : (
+                    <>
+                      <span className={task.completed ? 'completed' : ''} onDoubleClick={() => startEditingTask(task)} title="Double-click to edit">
+                        {isPmTask && <span className="pm-badge">PM</span>}
+                        {displayLabel}
+                      </span>
+                      <button className="btn-edit-small" onClick={() => startEditingTask(task)} title="Edit task">✎</button>
+                    </>
+                  )}
                   {isAdminDate && (
                     <input
                       type="date"
@@ -1334,7 +1383,7 @@ function PhaseEditor({ phase, phaseNumber, project, onUpdatePhase, onUpdateTask,
                   {isPmText && !task.label.includes('COI') && (
                     <PmTextResponse task={task} onRefresh={onRefresh} />
                   )}
-                  <button className="btn-delete-small" onClick={() => onDeleteTask(task.id)}>×</button>
+                  {!isEditing && <button className="btn-delete-small" onClick={() => onDeleteTask(task.id)}>×</button>}
                 </div>
               );
             })}

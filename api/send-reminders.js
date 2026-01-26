@@ -239,6 +239,16 @@ module.exports = async function handler(req, res) {
           .update({ last_reminder_sent: now.toISOString() })
           .eq('id', project.id);
 
+        // Log to activity stream
+        await supabase
+          .from('activity_log')
+          .insert({
+            project_id: project.id,
+            action: 'reminder_sent',
+            description: `Weekly reminder sent to ${recipientEmail} (${incompleteCount} pending item${incompleteCount !== 1 ? 's' : ''})`,
+            actor_type: 'system'
+          });
+
         results.push({ project: propertyName, status: 'sent', to: recipientEmail, tasks: incompleteCount });
       } catch (emailError) {
         results.push({ project: propertyName, status: 'error', error: emailError.message });

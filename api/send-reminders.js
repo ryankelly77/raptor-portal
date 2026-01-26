@@ -49,8 +49,9 @@ async function sendEmail(to, subject, html, ccEmails) {
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Mailgun error: ${error}`);
+    const errorText = await response.text();
+    console.error(`Mailgun error [${response.status}]:`, errorText, `Domain: ${MAILGUN_DOMAIN}, To: ${to}`);
+    throw new Error(`Mailgun error: ${response.statusText}`);
   }
 
   return response.json();
@@ -257,6 +258,7 @@ module.exports = async function handler(req, res) {
 
         results.push({ project: propertyName, status: 'sent', to: recipientEmail, tasks: incompleteCount });
       } catch (emailError) {
+        console.error(`Failed to send to ${propertyName}:`, emailError.message);
         results.push({ project: propertyName, status: 'error', error: emailError.message });
       }
     }

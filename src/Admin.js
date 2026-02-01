@@ -247,6 +247,12 @@ export default function Admin() {
               <span className="admin-nav-badge">{unreadMessageCount}</span>
             )}
           </button>
+          <button
+            className={activeTab === 'tempLogs' ? 'active' : ''}
+            onClick={() => setActiveTab('tempLogs')}
+          >
+            Temp Logs
+          </button>
         </nav>
         <div className="admin-header-right">
           <Link to="/" className="admin-home-link">← Back</Link>
@@ -329,6 +335,10 @@ export default function Admin() {
 
         {activeTab === 'messages' && (
           <AdminMessagesSection propertyManagers={data.propertyManagers} onUnreadChange={loadUnreadCount} />
+        )}
+
+        {activeTab === 'tempLogs' && (
+          <TempLogsAdmin />
         )}
       </main>
 
@@ -3904,6 +3914,660 @@ function AdminMessagesSection({ propertyManagers, onUnreadChange }) {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+// ============================================
+// TEMP LOGS ADMIN
+// ============================================
+function TempLogsAdmin() {
+  const [drivers, setDrivers] = useState([]);
+  const [sessions, setSessions] = useState([]);
+  const [selectedSession, setSelectedSession] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [showNewDriver, setShowNewDriver] = useState(false);
+  const [newDriverName, setNewDriverName] = useState('');
+  const [newDriverEmail, setNewDriverEmail] = useState('');
+  const [newDriverPhone, setNewDriverPhone] = useState('');
+  const [activeSection, setActiveSection] = useState('drivers'); // 'drivers' or 'sessions'
+  const [dateFilter, setDateFilter] = useState('');
+  const [driverFilter, setDriverFilter] = useState('');
+  const [exportStartDate, setExportStartDate] = useState('');
+  const [exportEndDate, setExportEndDate] = useState('');
+  const [editingDriver, setEditingDriver] = useState(null);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [modalPhoto, setModalPhoto] = useState(null);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  async function loadData() {
+    setLoading(true);
+    try {
+      // Load drivers
+      const driversRes = await fetch('/api/admin/crud', {
+        method: 'POST',
+        headers: getAdminAuthHeaders(),
+        body: JSON.stringify({ table: 'drivers', action: 'read' })
+      });
+      const driversData = await driversRes.json();
+      setDrivers(driversData.data || []);
+
+      // Load sessions with entries
+      const sessionsRes = await fetch('/api/admin/crud', {
+        method: 'POST',
+        headers: getAdminAuthHeaders(),
+        body: JSON.stringify({ table: 'temp_log_sessions', action: 'read' })
+      });
+      const sessionsData = await sessionsRes.json();
+
+      // For each session, load entries
+      const sessionsWithEntries = await Promise.all(
+        (sessionsData.data || []).map(async (session) => {
+          const entriesRes = await fetch('/api/admin/crud', {
+            method: 'POST',
+            headers: getAdminAuthHeaders(),
+            body: JSON.stringify({
+              table: 'temp_log_entries',
+              action: 'read',
+              filters: { session_id: session.id }
+            })
+          });
+          const entriesData = await entriesRes.json();
+          return { ...session, entries: entriesData.data || [] };
+        })
+      );
+
+      setSessions(sessionsWithEntries);
+    } catch (error) {
+      console.error('Error loading temp log data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleCreateDriver() {
+    if (!newDriverName.trim()) return;
+
+    try {
+      const res = await fetch('/api/admin/crud', {
+        method: 'POST',
+        headers: getAdminAuthHeaders(),
+        body: JSON.stringify({
+          table: 'drivers',
+          action: 'create',
+          data: {
+            name: newDriverName.trim(),
+            email: newDriverEmail.trim() || null,
+            phone: newDriverPhone.trim() || null
+          }
+        })
+      });
+
+      if (res.ok) {
+        setNewDriverName('');
+        setNewDriverEmail('');
+        setNewDriverPhone('');
+        setShowNewDriver(false);
+        await loadData();
+      }
+    } catch (error) {
+      console.error('Error creating driver:', error);
+    }
+  }
+
+  async function handleToggleDriverActive(driver) {
+    try {
+      await fetch('/api/admin/crud', {
+        method: 'POST',
+        headers: getAdminAuthHeaders(),
+        body: JSON.stringify({
+          table: 'drivers',
+          action: 'update',
+          id: driver.id,
+          data: { is_active: !driver.is_active }
+        })
+      });
+      await loadData();
+    } catch (error) {
+      console.error('Error updating driver:', error);
+    }
+  }
+
+  async function handleDeleteDriver(id) {
+    if (!window.confirm('Delete this driver? This cannot be undone.')) return;
+
+    try {
+      await fetch('/api/admin/crud', {
+        method: 'POST',
+        headers: getAdminAuthHeaders(),
+        body: JSON.stringify({ table: 'drivers', action: 'delete', id })
+      });
+      await loadData();
+    } catch (error) {
+      console.error('Error deleting driver:', error);
+    }
+  }
+
+  function startEditDriver(driver) {
+    setEditingDriver(driver);
+    setEditName(driver.name);
+    setEditEmail(driver.email || '');
+    setEditPhone(driver.phone || '');
+  }
+
+  function cancelEditDriver() {
+    setEditingDriver(null);
+    setEditName('');
+    setEditEmail('');
+    setEditPhone('');
+  }
+
+  async function handleSaveDriver() {
+    if (!editingDriver || !editName.trim()) return;
+
+    try {
+      await fetch('/api/admin/crud', {
+        method: 'POST',
+        headers: getAdminAuthHeaders(),
+        body: JSON.stringify({
+          table: 'drivers',
+          action: 'update',
+          id: editingDriver.id,
+          data: {
+            name: editName.trim(),
+            email: editEmail.trim() || null,
+            phone: editPhone.trim() || null
+          }
+        })
+      });
+      cancelEditDriver();
+      await loadData();
+    } catch (error) {
+      console.error('Error updating driver:', error);
+    }
+  }
+
+  function copyDriverLink(token) {
+    const url = `${window.location.origin}/driver/${token}`;
+    navigator.clipboard.writeText(url);
+    alert('Driver link copied to clipboard!');
+  }
+
+  async function handleDeleteSession(sessionId) {
+    if (!window.confirm('Delete this session and all its entries? This cannot be undone.')) {
+      return;
+    }
+
+    try {
+      // Delete entries first (they have foreign key constraint)
+      await fetch('/api/admin/crud', {
+        method: 'POST',
+        headers: getAdminAuthHeaders(),
+        body: JSON.stringify({
+          table: 'temp_log_entries',
+          action: 'delete',
+          filters: { session_id: sessionId }
+        })
+      });
+
+      // Then delete the session
+      await fetch('/api/admin/crud', {
+        method: 'POST',
+        headers: getAdminAuthHeaders(),
+        body: JSON.stringify({
+          table: 'temp_log_sessions',
+          action: 'delete',
+          id: sessionId
+        })
+      });
+
+      // Clear selected session if it was deleted
+      if (selectedSession?.id === sessionId) {
+        setSelectedSession(null);
+      }
+
+      await loadData();
+    } catch (error) {
+      console.error('Error deleting session:', error);
+      alert('Failed to delete session');
+    }
+  }
+
+  // Filter sessions
+  const filteredSessions = sessions.filter(session => {
+    if (dateFilter && session.session_date !== dateFilter) return false;
+    if (driverFilter && session.driver_id !== driverFilter) return false;
+    return true;
+  });
+
+  // Export sessions to CSV
+  function handleExportCSV() {
+    // Filter sessions by date range
+    const exportSessions = sessions.filter(session => {
+      const sessionDate = session.session_date;
+      if (exportStartDate && sessionDate < exportStartDate) return false;
+      if (exportEndDate && sessionDate > exportEndDate) return false;
+      return true;
+    });
+
+    if (exportSessions.length === 0) {
+      alert('No sessions found in the selected date range.');
+      return;
+    }
+
+    // Build CSV rows
+    const rows = [];
+    rows.push(['Date', 'Time', 'Driver', 'Session Status', 'Entry Type', 'Stop #', 'Location', 'Temperature (°F)', 'Notes', 'Photo URL']);
+
+    exportSessions.forEach(session => {
+      const driverName = getDriverName(session.driver_id);
+      const sessionDate = new Date(session.session_date).toLocaleDateString();
+
+      if (!session.entries || session.entries.length === 0) {
+        // Session with no entries
+        rows.push([sessionDate, '', driverName, session.status, '', '', '', '', session.notes || '', '']);
+      } else {
+        session.entries.forEach(entry => {
+          const time = new Date(entry.timestamp).toLocaleTimeString();
+          rows.push([
+            sessionDate,
+            time,
+            driverName,
+            session.status,
+            entry.entry_type,
+            entry.stop_number || '',
+            entry.location_name || '',
+            entry.temperature,
+            entry.notes || '',
+            entry.photo_url || ''
+          ]);
+        });
+      }
+    });
+
+    // Convert to CSV string
+    const csvContent = rows.map(row =>
+      row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+    ).join('\n');
+
+    // Download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `temp-logs-${exportStartDate || 'all'}-to-${exportEndDate || 'all'}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  const getDriverName = (driverId) => {
+    const driver = drivers.find(d => d.id === driverId);
+    return driver?.name || 'Unknown Driver';
+  };
+
+  const formatStatus = (status) => {
+    if (status === 'in_progress') return 'In Progress';
+    if (status === 'completed') return 'Completed';
+    return status;
+  };
+
+  if (loading) {
+    return <div className="admin-loading">Loading temperature logs...</div>;
+  }
+
+  return (
+    <div className="temp-logs-admin">
+      {/* Section Toggle */}
+      <div className="temp-logs-toggle">
+        <button
+          className={activeSection === 'drivers' ? 'active' : ''}
+          onClick={() => setActiveSection('drivers')}
+        >
+          Drivers ({drivers.length})
+        </button>
+        <button
+          className={activeSection === 'sessions' ? 'active' : ''}
+          onClick={() => setActiveSection('sessions')}
+        >
+          Sessions ({sessions.length})
+        </button>
+      </div>
+
+      {/* Drivers Section */}
+      {activeSection === 'drivers' && (
+        <div className="temp-logs-section">
+          <div className="section-header">
+            <h2>Drivers</h2>
+            <button className="btn-primary" onClick={() => setShowNewDriver(true)}>
+              + Add Driver
+            </button>
+          </div>
+
+          {showNewDriver && (
+            <div className="temp-logs-new-driver">
+              <input
+                type="text"
+                placeholder="Driver name *"
+                value={newDriverName}
+                onChange={(e) => setNewDriverName(e.target.value)}
+              />
+              <input
+                type="email"
+                placeholder="Email (optional)"
+                value={newDriverEmail}
+                onChange={(e) => setNewDriverEmail(e.target.value)}
+              />
+              <input
+                type="tel"
+                placeholder="Phone (optional)"
+                value={newDriverPhone}
+                onChange={(e) => setNewDriverPhone(e.target.value)}
+              />
+              <div className="temp-logs-new-driver-actions">
+                <button className="btn-secondary" onClick={() => setShowNewDriver(false)}>Cancel</button>
+                <button className="btn-primary" onClick={handleCreateDriver} disabled={!newDriverName.trim()}>
+                  Create Driver
+                </button>
+              </div>
+            </div>
+          )}
+
+          {drivers.length === 0 && !showNewDriver && (
+            <div className="empty-state">
+              <p>No drivers yet. Click "+ Add Driver" to create one.</p>
+            </div>
+          )}
+
+          {drivers.length > 0 && (
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Status</th>
+                <th>Access Link</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {drivers.map(driver => (
+                editingDriver?.id === driver.id ? (
+                  <tr key={driver.id} className="editing-row">
+                    <td>
+                      <input
+                        type="text"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="edit-input"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="email"
+                        value={editEmail}
+                        onChange={(e) => setEditEmail(e.target.value)}
+                        className="edit-input"
+                        placeholder="Email"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="tel"
+                        value={editPhone}
+                        onChange={(e) => setEditPhone(e.target.value)}
+                        className="edit-input"
+                        placeholder="Phone"
+                      />
+                    </td>
+                    <td colSpan="3" className="actions-cell">
+                      <button className="btn-icon" onClick={handleSaveDriver}>Save</button>
+                      <button className="btn-icon" onClick={cancelEditDriver}>Cancel</button>
+                    </td>
+                  </tr>
+                ) : (
+                  <tr key={driver.id} className={!driver.is_active ? 'inactive' : ''}>
+                    <td>{driver.name}</td>
+                    <td>{driver.email || '-'}</td>
+                    <td>{driver.phone || '-'}</td>
+                    <td>
+                      <span className={`status-badge ${driver.is_active ? 'active' : 'inactive'}`}>
+                        {driver.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        className="btn-link"
+                        onClick={() => copyDriverLink(driver.access_token)}
+                      >
+                        Copy Link
+                      </button>
+                    </td>
+                    <td className="actions-cell">
+                      <button
+                        className="btn-icon"
+                        onClick={() => startEditDriver(driver)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="btn-icon"
+                        onClick={() => handleToggleDriverActive(driver)}
+                      >
+                        {driver.is_active ? 'Deactivate' : 'Activate'}
+                      </button>
+                      <button
+                        className="btn-icon btn-danger"
+                        onClick={() => handleDeleteDriver(driver.id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                )
+              ))}
+            </tbody>
+          </table>
+          )}
+        </div>
+      )}
+
+      {/* Sessions Section */}
+      {activeSection === 'sessions' && (
+        <div className="temp-logs-section">
+          <div className="section-header">
+            <h2>Temperature Log Sessions</h2>
+            <div className="section-filters">
+              <input
+                type="date"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                placeholder="Filter by date"
+              />
+              <select
+                value={driverFilter}
+                onChange={(e) => setDriverFilter(e.target.value)}
+              >
+                <option value="">All Drivers</option>
+                {drivers.map(d => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
+                ))}
+              </select>
+              <button className="btn-secondary" onClick={() => { setDateFilter(''); setDriverFilter(''); }}>
+                Clear
+              </button>
+            </div>
+          </div>
+
+          {/* Export Section */}
+          <div className="temp-logs-export">
+            <span className="export-label">Export:</span>
+            <input
+              type="date"
+              value={exportStartDate}
+              onChange={(e) => setExportStartDate(e.target.value)}
+              placeholder="Start date"
+            />
+            <span className="export-to">to</span>
+            <input
+              type="date"
+              value={exportEndDate}
+              onChange={(e) => setExportEndDate(e.target.value)}
+              placeholder="End date"
+            />
+            <button className="btn-primary" onClick={handleExportCSV}>
+              Export CSV
+            </button>
+          </div>
+
+          {selectedSession ? (
+            <div className="temp-logs-session-detail">
+              <div className="session-detail-top">
+                <button className="btn-back" onClick={() => setSelectedSession(null)}>
+                  ← Back to Sessions
+                </button>
+                <button
+                  className="btn-icon btn-danger"
+                  onClick={() => handleDeleteSession(selectedSession.id)}
+                >
+                  Delete Session
+                </button>
+              </div>
+              <div className="session-detail-header">
+                <h3>Session on {new Date(selectedSession.session_date).toLocaleDateString()}</h3>
+                <p>Driver: {getDriverName(selectedSession.driver_id)}</p>
+                <p>Status: <span className={`status-badge ${selectedSession.status}`}>{formatStatus(selectedSession.status)}</span></p>
+                {selectedSession.vehicle_id && <p>Vehicle: {selectedSession.vehicle_id}</p>}
+                {selectedSession.entries && selectedSession.entries.length > 0 && (() => {
+                  const times = selectedSession.entries.map(e => new Date(e.timestamp).getTime());
+                  const firstTime = Math.min(...times);
+                  const lastTime = Math.max(...times);
+                  const diffMs = lastTime - firstTime;
+                  const diffMins = Math.round(diffMs / 60000);
+                  const hours = Math.floor(diffMins / 60);
+                  const mins = diffMins % 60;
+                  return (
+                    <p className="session-duration">
+                      Total Time: {hours > 0 ? `${hours}h ${mins}m` : `${mins}m`}
+                    </p>
+                  );
+                })()}
+              </div>
+
+              <div className="session-entries">
+                <h4>Entries ({selectedSession.entries?.length || 0})</h4>
+                {(selectedSession.entries || []).map((entry, idx) => {
+                  // Parse location name and address (format: "Name | Address")
+                  let locName = '';
+                  let locAddress = '';
+                  if (entry.location_name) {
+                    const parts = entry.location_name.split(' | ');
+                    locName = parts[0];
+                    locAddress = parts[1] || '';
+                  }
+                  return (
+                    <div key={entry.id} className={`session-entry ${entry.entry_type}`}>
+                      <div className="entry-header">
+                        <span className="entry-type">
+                          {entry.entry_type === 'pickup' ? 'Pickup' : `Delivery #${entry.stop_number}`}
+                        </span>
+                        <span className="entry-time">
+                          {new Date(entry.timestamp).toLocaleTimeString()}
+                        </span>
+                      </div>
+                      <div className={`entry-temp ${entry.temperature > 41 ? 'warning' : 'ok'}`}>
+                        {entry.temperature}°F
+                      </div>
+                      {locName && (
+                        <div className="entry-location">
+                          <div className="entry-location-name">{locName}</div>
+                          {locAddress && <div className="entry-location-address">{locAddress}</div>}
+                        </div>
+                      )}
+                      {entry.notes && <div className="entry-notes">{entry.notes}</div>}
+                      {entry.photo_url && (
+                        <div className="entry-photos">
+                          {entry.photo_url.split(' | ').map((url, photoIdx) => (
+                            <img
+                              key={photoIdx}
+                              src={url}
+                              alt={`Entry photo ${photoIdx + 1}`}
+                              className="entry-photo"
+                              onClick={() => setModalPhoto(url)}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                {(!selectedSession.entries || selectedSession.entries.length === 0) && (
+                  <p className="empty-message">No entries in this session.</p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Driver</th>
+                  <th>Status</th>
+                  <th>Entries</th>
+                  <th>Vehicle</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredSessions.map(session => (
+                  <tr key={session.id}>
+                    <td>{new Date(session.session_date).toLocaleDateString()}</td>
+                    <td>{getDriverName(session.driver_id)}</td>
+                    <td>
+                      <span className={`status-badge ${session.status}`}>{formatStatus(session.status)}</span>
+                    </td>
+                    <td>{session.entries?.length || 0}</td>
+                    <td>{session.vehicle_id || '-'}</td>
+                    <td className="actions-cell">
+                      <button className="btn-link" onClick={() => setSelectedSession(session)}>
+                        View
+                      </button>
+                      <button
+                        className="btn-icon btn-danger"
+                        onClick={() => handleDeleteSession(session.id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {filteredSessions.length === 0 && (
+                  <tr>
+                    <td colSpan="6" className="empty-message">No sessions found.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {/* Photo Modal */}
+      {modalPhoto && (
+        <div className="photo-modal-overlay" onClick={() => setModalPhoto(null)}>
+          <div className="photo-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="photo-modal-close" onClick={() => setModalPhoto(null)}>×</button>
+            <img src={modalPhoto} alt="Full size" />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

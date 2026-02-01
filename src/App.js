@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useParams, Link, useSearchParams } from 'react-router-dom';
 import { fetchProjectByToken, fetchProjectsByPMToken, recordSurveyClick, updateTask } from './supabaseClient';
 import Admin from './Admin';
+import DriverTempLog from './DriverTempLog';
 import './App.css';
 
 // ============================================
@@ -2427,6 +2428,8 @@ function App() {
       <Route path="/pm/:token" element={<PMPortal />} />
       <Route path="/survey/:token" element={<SurveyRedirect />} />
       <Route path="/admin" element={<Admin />} />
+      <Route path="/driver" element={<DriverTempLog />} />
+      <Route path="/driver/:token" element={<DriverTempLog />} />
       <Route path="/preview" element={<PublicPreview />} />
     </Routes>
   );

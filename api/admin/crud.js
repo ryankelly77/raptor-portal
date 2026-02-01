@@ -83,6 +83,28 @@ const TABLE_CONFIG = {
     ],
     requiredForCreate: ['template_key', 'name'],
     orderBy: { column: 'name', ascending: true }
+  },
+  drivers: {
+    allowedFields: [
+      'name', 'email', 'phone', 'is_active', 'access_token'
+    ],
+    requiredForCreate: ['name'],
+    orderBy: { column: 'name', ascending: true }
+  },
+  temp_log_sessions: {
+    allowedFields: [
+      'driver_id', 'session_date', 'vehicle_id', 'notes', 'status'
+    ],
+    requiredForCreate: ['driver_id'],
+    orderBy: { column: 'created_at', ascending: false }
+  },
+  temp_log_entries: {
+    allowedFields: [
+      'session_id', 'entry_type', 'stop_number', 'location_name',
+      'timestamp', 'temperature', 'photo_url', 'notes'
+    ],
+    requiredForCreate: ['session_id', 'entry_type', 'temperature'],
+    orderBy: { column: 'timestamp', ascending: true }
   }
 };
 
@@ -388,6 +410,12 @@ module.exports = async function handler(req, res) {
           insertData.sort_order = insertData.sort_order || 0;
         } else if (table === 'property_managers') {
           insertData.is_active = insertData.is_active !== false;
+        } else if (table === 'drivers') {
+          insertData.is_active = insertData.is_active !== false;
+        } else if (table === 'temp_log_sessions') {
+          insertData.status = insertData.status || 'in_progress';
+        } else if (table === 'temp_log_entries') {
+          insertData.stop_number = insertData.stop_number || 1;
         }
 
         console.log(`[CRUD CREATE] Table: ${table}, Data:`, JSON.stringify(insertData));

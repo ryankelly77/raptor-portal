@@ -626,6 +626,7 @@ function PropertyNotice({ contractorInfo, tasks = [], onRefresh, document, globa
       if (onRefresh) onRefresh();
     } catch (err) {
       console.error('Error updating task:', err);
+      alert('Error updating task: ' + err.message);
     } finally {
       setUpdating(null);
     }
@@ -821,6 +822,7 @@ function BuildingAccessNotice({ tasks = [], onRefresh, globalDocuments, readOnly
       if (onRefresh) onRefresh();
     } catch (err) {
       console.error('Error updating task:', err);
+      alert('Error updating task: ' + err.message);
     } finally {
       setUpdating(null);
     }
@@ -835,6 +837,7 @@ function BuildingAccessNotice({ tasks = [], onRefresh, globalDocuments, readOnly
       if (onRefresh) onRefresh();
     } catch (err) {
       console.error('Error updating task:', err);
+      alert('Error saving COI form: ' + err.message);
     } finally {
       setUpdating(null);
     }
@@ -850,6 +853,7 @@ function BuildingAccessNotice({ tasks = [], onRefresh, globalDocuments, readOnly
       if (onRefresh) onRefresh();
     } catch (err) {
       console.error('Error updating task:', err);
+      alert('Error saving: ' + err.message);
     } finally {
       setUpdating(null);
     }

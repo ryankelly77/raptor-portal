@@ -1860,24 +1860,25 @@ function PMPortal() {
 
   const currentUrl = window.location.href;
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        setLoading(true);
-        const result = await fetchProjectsByPMToken(token);
-        if (!result) {
-          setError('Portal not found');
-        } else {
-          setData(result);
-        }
-      } catch (err) {
-        console.error('Error loading portal:', err);
-        setError('Unable to load portal');
-      } finally {
-        setLoading(false);
+  const loadData = async (showLoading = false) => {
+    try {
+      if (showLoading) setLoading(true);
+      const result = await fetchProjectsByPMToken(token);
+      if (!result) {
+        setError('Portal not found');
+      } else {
+        setData(result);
       }
+    } catch (err) {
+      console.error('Error loading portal:', err);
+      setError('Unable to load portal');
+    } finally {
+      setLoading(false);
     }
-    loadData();
+  };
+
+  useEffect(() => {
+    loadData(true);
   }, [token]);
 
   if (loading) {
@@ -1993,7 +1994,7 @@ function PMPortal() {
             ) : (
               data.projects.map(project => (
                 <div key={project.publicToken} id={`property-${project.propertyName}`} className="pm-project-section">
-                  <ProjectWidget project={project} showLogo={false} />
+                  <ProjectWidget project={project} showLogo={false} onRefresh={loadData} />
                 </div>
               ))
             )}

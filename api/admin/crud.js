@@ -36,7 +36,7 @@ const TABLE_CONFIG = {
       'upload_speed', 'download_speed', 'enclosure_type',
       'enclosure_color', 'custom_color_name', 'smartfridge_qty',
       'smartcooker_qty', 'deliveries', 'document_url', 'notes',
-      'pm_text_response'
+      'pm_text_response', 'pm_text_value'
     ],
     requiredForCreate: ['phase_id', 'label'],
     orderBy: { column: 'sort_order', ascending: true }

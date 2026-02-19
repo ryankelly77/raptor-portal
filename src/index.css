@@ -2658,22 +2658,38 @@ body {
   color: var(--text-secondary);
   margin-bottom: 14px;
 }
+/* COI Document Download Section */
+.coi-document-download {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed #FFE0B2;
+}
+.coi-document-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--success-green);
+  margin-bottom: 10px;
+}
+.coi-document-header svg {
+  color: var(--success-green);
+}
 .coi-download-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  background: var(--raptor-orange);
+  background: var(--success-green);
   color: white;
   text-decoration: none;
   border-radius: 6px;
   font-weight: 500;
   font-size: 0.9em;
-  margin-bottom: 15px;
   transition: background 0.2s;
 }
 .coi-download-btn:hover {
-  background: var(--raptor-orange-light);
+  background: #388E3C;
 }
 .pm-action-item.access {
   border-color: #E65100;

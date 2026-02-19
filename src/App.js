@@ -778,7 +778,7 @@ function PropertyNotice({ contractorInfo, tasks = [], onRefresh, document, globa
   );
 }
 
-function BuildingAccessNotice({ tasks = [], onRefresh, globalDocuments, readOnly = false, subtitle = "Please complete the following items for building access:" }) {
+function BuildingAccessNotice({ tasks = [], onRefresh, globalDocuments, readOnly = false, subtitle = "Please complete the following items for building access:", coiDocument = null }) {
   const [updating, setUpdating] = useState(null);
   const [textValues, setTextValues] = useState({});
   const [coiForm, setCoiForm] = useState({ buildingName: '', careOf: '', street: '', city: '', state: '', zip: '' });
@@ -1036,6 +1036,30 @@ function BuildingAccessNotice({ tasks = [], onRefresh, globalDocuments, readOnly
           );
         })}
       </div>
+
+      {/* COI Document Download - shown when admin uploads the certificate */}
+      {coiDocument && coiDocument.url && (
+        <div className="coi-document-download">
+          <div className="coi-document-header">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+            <span>Certificate of Insurance</span>
+          </div>
+          <a href={coiDocument.url} target="_blank" rel="noopener noreferrer" className="coi-download-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Download COI
+          </a>
+        </div>
+      )}
     </div>
   );
 }
@@ -1188,7 +1212,7 @@ function TimelinePhase({ phase, phaseNumber, locationImages = [], surveyToken, s
 
           {/* Building Access & Coordination phase PM tasks */}
           {phase.title.toLowerCase().includes('building access') && (
-            <BuildingAccessNotice tasks={phase.tasks} onRefresh={onRefresh} globalDocuments={globalDocuments} readOnly={readOnly} />
+            <BuildingAccessNotice tasks={phase.tasks} onRefresh={onRefresh} globalDocuments={globalDocuments} readOnly={readOnly} coiDocument={phase.document} />
           )}
 
           {/* Equipment Ordering phase PM tasks */}

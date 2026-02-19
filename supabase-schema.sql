@@ -99,6 +99,9 @@ CREATE TABLE phases (
   survey_top_meals JSONB DEFAULT '[]'::jsonb,
   survey_top_snacks JSONB DEFAULT '[]'::jsonb,
   survey_dietary_notes TEXT,
+  document_url TEXT,
+  document_label TEXT,
+  documents JSONB DEFAULT '[]'::jsonb,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(project_id, phase_number)

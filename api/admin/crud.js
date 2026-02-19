@@ -25,7 +25,8 @@ const TABLE_CONFIG = {
       'property_responsibility', 'contractor_name',
       'contractor_scheduled_date', 'contractor_status',
       'survey_response_rate', 'survey_top_meals',
-      'survey_top_snacks', 'survey_dietary_notes'
+      'survey_top_snacks', 'survey_dietary_notes',
+      'document_url', 'document_label', 'documents'
     ],
     requiredForCreate: ['project_id', 'title'],
     orderBy: { column: 'phase_number', ascending: true }

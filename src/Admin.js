@@ -500,6 +500,7 @@ function ProjectEditor({ project, details, locations, properties, managers, onBa
       onRefresh();
     } catch (err) {
       console.error('Error updating phase:', err);
+      alert('Error updating phase: ' + (err.message || 'Unknown error'));
     }
   }
 
@@ -964,14 +965,16 @@ function PhaseEditor({ phase, phaseNumber, project, onUpdatePhase, onUpdateTask,
         .getPublicUrl(filePath);
 
       const newLabel = form.document_label || file.name.replace(/\.[^/.]+$/, '');
+      console.log('Saving document to phase:', { phaseId: phase.id, document_url: publicUrl, document_label: newLabel });
       await onUpdatePhase(phase.id, {
         document_url: publicUrl,
         document_label: newLabel
       });
+      console.log('Document saved successfully');
       setForm(prev => ({ ...prev, document_url: publicUrl, document_label: newLabel }));
     } catch (err) {
-      console.error('Error uploading file:', err);
-      alert('Error uploading file. Make sure the "project-files" bucket exists in Supabase Storage.');
+      console.error('Error uploading/saving file:', err);
+      alert('Error: ' + (err.message || 'Failed to save document'));
     } finally {
       setUploading(false);
     }
